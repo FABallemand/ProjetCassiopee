@@ -1,6 +1,5 @@
 # 🌌 Projet Cassiopée
 
-![](https://moodle.imtbs-tsp.eu/pluginfile.php/26374/mod_resource/content/1/logo%20transparent.png =250x250)
 ![](img/cassiopee_1.png)
 
 ## 🖐 Self-supervised learning with deep neural networks for automatic gesture recognition
