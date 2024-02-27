@@ -1,4 +1,6 @@
 artemis/
+data/
+src/1-Baseline
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
