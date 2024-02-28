@@ -18,3 +18,7 @@
 - [SimCLR in PyTorch](https://medium.com/the-owl/simclr-in-pytorch-5f290cb11dd7)
 - [SimCLR Tutorial](https://deeplearning.neuromatch.io/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/student/W3D3_Tutorial1.html)
 - [SimCLR Tutorial Videos](https://www.youtube.com/playlist?list=PLkBQOLLbi18NYb71nfD5gwwnZY4DPMCXu)
+
+## 📋 ToDo
+- Create proper validation dataloader for RGB-D Object dataset
+- Change plot_results in order to plot architecture like in TensorFlow (https://stackoverflow.com/questions/52468956/how-do-i-visualize-a-net-in-pytorch)
