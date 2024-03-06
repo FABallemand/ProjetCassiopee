@@ -1,37 +1,38 @@
 import torch
 import torch.nn as nn
 
+
 class Autoencoder(nn.Module) :
     def __init__(self):
         super(Autoencoder, self).__init__()
-        #Define encoder layers
-        #Define convolutional layers
+        # Define encoder layers
+        # Define convolutional layers
         self.en_conv1 = nn.Conv2d(3, 16, kernel_size=7, stride=2, padding=3)
         self.en_conv2 = nn.Conv2d(3, 32, kernel_size=5, stride=1, padding=2)
         self.en_conv3 = nn.Conv2d(3, 64, kernel_size=5, stride=1, padding=2)
         self.en_conv4 = nn.Conv2d(3, 128, kernel_size=3, stride=1, padding=1)
         self.en_conv5 = nn.Conv2d(3, 256, kernel_size=3, stride=1, padding=1)
-        #Define max pooling layer
+        # Define max pooling layer
         self.maxpool = nn.Maxpool2d(kernel_size=2, stride=2)
 
-        #Define decoder layers
-        #Define convolutional layers
+        # Define decoder layers
+        # Define convolutional layers
         self.de_transconv1 = nn.ConvTranspose2d(3, 256, kernel_size=3, stride=1, padding=1)
         self.de_transconv2 = nn.ConvTranspose2d(3, 128, kernel_size=3, stride=1, padding=1)
         self.de_transconv3 = nn.ConvTranspose2d(3, 64, kernel_size=5, stride=1, padding=2)
         self.de_transconv4 = nn.ConvTranspose2d(3, 32, kernel_size=5, stride=1, padding=2)
         self.de_transconv5 = nn.ConvTranspose2d(3, 16, kernel_size=7, stride=2, padding=3)
-        #Define upsampling operation
+        # Define upsampling operation
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
 
-        #Define batch normalisation
+        # Define batch normalisation
         self.batchnorm1 = nn.BatchNorm2d(16)
         self.batchnorm2 = nn.BatchNorm2d(32)
         self.batchnorm3 = nn.BatchNorm2d(64)
         self.batchnorm4 = nn.BatchNorm2d(128)
         self.batchnorm5 = nn.BatchNorm2d(256)
 
-        #Define activation functions
+        # Define activation functions
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
 

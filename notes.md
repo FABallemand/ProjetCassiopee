@@ -22,3 +22,4 @@
 ## 📋 ToDo
 - Create proper validation dataloader for RGB-D Object dataset
 - Change plot_results in order to plot architecture like in TensorFlow (https://stackoverflow.com/questions/52468956/how-do-i-visualize-a-net-in-pytorch)
+- Reorganise training functions (keep structure of training in general file and create functions for each model in order to pre-process data, make predictions, compute accuracy and compute loss)

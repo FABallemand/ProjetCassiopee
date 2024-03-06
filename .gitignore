@@ -1,5 +1,6 @@
 artemis/
 data/
+nohup.out
 src/1-Baseline
 
 # Byte-compiled / optimized / DLL files

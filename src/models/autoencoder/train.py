@@ -4,7 +4,7 @@ from sklearn.metrics import confusion_matrix
 
 from ...train import create_optimizer
 
-def train_one_epoch(model, data_loader, loss_function, optimizer, device=None, debug=False):
+def train_one_epoch(model, data_loader, loss_function, optimizer):
 
     # Enable training
     model.train(True)
@@ -20,7 +20,7 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, device=None, d
         optimizer.zero_grad()
 
         # Prepare batch
-        # batch, erased = prep_data(batch, model.K, device)
+        # Data preprocessing?
 
         # Make predictions for batch
         encoded, decoded = model(rgb)
@@ -48,7 +48,7 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, device=None, d
     return train_loss
 
 
-def evaluate(model, data_loader, loss_function, device, debug=False):
+def evaluate(model, data_loader, loss_function):
 
     # Initialise losses
     validation_loss = 0.0
@@ -87,7 +87,6 @@ def train(
         early_stopping=False,
         patience=5,
         min_delta=1e-3,
-        device=torch.device("cpu"),
         debug=False):
 
     # Losses
@@ -111,14 +110,14 @@ def train(
             # Train for one epoch
             if debug:
                 with torch.autograd.detect_anomaly():
-                    train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device, debug)
+                    train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer)
                     train_losses.append(train_loss)
             else:
-                train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device, debug)
+                train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer)
                 train_losses.append(train_loss)
 
             # Evaluate model
-            validation_accuracy, validation_loss = evaluate(model, validation_data_loader, loss_function, device, debug)
+            validation_accuracy, validation_loss = evaluate(model, validation_data_loader, loss_function)
             validation_losses.append(validation_loss)
 
             print(f"Train: loss={train_loss}")
@@ -139,7 +138,7 @@ def train(
     return train_losses, validation_losses, run_epochs
 
 
-def test(model, test_dataloader, device, debug):
+def test(model, test_dataloader):
     # Accuracy variables
     correct = 0
     total = 0
