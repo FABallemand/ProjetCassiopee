@@ -5,7 +5,7 @@ class TestCNN(nn.Module):
     def __init__(self, nb_classes=10):
         super(TestCNN, self).__init__()
         self.layer1 = nn.Sequential(
-            nn.Conv2d(1, 16, kernel_size=5, stride=1, padding=2),
+            nn.Conv2d(3, 16, kernel_size=5, stride=1, padding=2),
             nn.BatchNorm2d(16),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2))
@@ -14,7 +14,7 @@ class TestCNN(nn.Module):
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2))
-        self.fc = nn.Linear(7*7*32, nb_classes)
+        self.fc = nn.Linear(160*120*32, nb_classes)
         
     def forward(self, x):
         out = self.layer1(x)

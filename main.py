@@ -4,6 +4,7 @@ import numpy as np
 
 import torch
 from torch.utils.data import DataLoader
+import torchvision.transforms as transforms
 
 import matplotlib.pyplot as plt
 
@@ -12,28 +13,39 @@ from src.dataset import RGBDObjectDataset
 from src.models import TestCNN
 from src.train import train, test, plot_results
 
+# Run with: nohup python3 main.py &
+
 if __name__=='__main__':
     # Change working directory
     abspath = os.path.abspath(__file__)
     dname = os.path.dirname(abspath)
     os.chdir(dname)
 
+    # Begin set-up
+    print("#### Start Set-Up ####")
+
     # Set-up Python
     setup_python()
 
     # Set-up PyTorch
     DEVICE = setup_pytorch()
+    # DEVICE = torch.device("cpu")
 
     # Dataset parameters
-    # ...
+    TRANSFORM = None
+    # TRANSFORM = transforms.Compose(
+    #     [transforms.ToTensor(),
+    #     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    NB_TRAIN_IMGS = 100
+    NB_TEST_IMGS = 10
 
     # Training parameters
-    BATCH_SIZE = 32 # Batch size
+    BATCH_SIZE = 8 # Batch size
 
     LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
     OPTIMIZER_TYPE = "Adam"                     # Type of optimizer
 
-    EPOCHS = [100, 10, 5]                     # Number of epochs
+    EPOCHS = [10, 10, 5]                     # Number of epochs
     LEARNING_RATES = [0.001, 0.0001, 0.00001] # Learning rates
     
     EARLY_STOPPING = False # Early stopping flag
@@ -43,13 +55,21 @@ if __name__=='__main__':
     DEBUG = False # Debug flag
     
     # Datasets
+    print("#### Start Datasets Creation ####")
+
     train_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
-                                      train=True)
+                                      mode="train",
+                                      transform=TRANSFORM,
+                                      nb_imgs=NB_TRAIN_IMGS)
     
     test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
-                                     train=False)
+                                     mode="test",
+                                     transform=TRANSFORM,
+                                     nb_imgs=NB_TEST_IMGS)
     
     # Data loaders
+    print("#### Start Data Loaders Creation ####")
+
     train_data_loader = DataLoader(train_dataset,
                                    batch_size=BATCH_SIZE,
                                    shuffle=True)
@@ -59,6 +79,8 @@ if __name__=='__main__':
                                   shuffle=True)
     
     # Create neural network
+    print("#### Start Creating Model ####")
+
     model = TestCNN(nb_classes=len(train_dataset.class_dict)).to(DEVICE)
 
     # Save training time start
