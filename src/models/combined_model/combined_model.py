@@ -1,14 +1,14 @@
 import torch
 import torch.nn as nn
-from autoencoder import Autoencoder
-from cnn import TestCNN
+from ..autoencoder import TestAutoencoder
+from ..cnn import TestCNN
 
 
 class CombinedModel(nn.Module):
     def __init__(self):
         super(CombinedModel,self).__init__()
         # Initialize autoencoder and encoder
-        self.autoencoder = Autoencoder()
+        self.autoencoder = TestAutoencoder()
         self.encoder = TestCNN()
 
     def forward(self, x):

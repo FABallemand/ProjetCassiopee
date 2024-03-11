@@ -4,7 +4,7 @@ from sklearn.metrics import confusion_matrix
 
 from ...train import create_optimizer
 
-def train_one_epoch(model, data_loader, loss_function, optimizer):
+def train_one_epoch(model, data_loader, loss_function, optimizer, device):
 
     # Enable training
     model.train(True)
@@ -14,7 +14,15 @@ def train_one_epoch(model, data_loader, loss_function, optimizer):
 
     # Pass over all batches
     for i, batch in enumerate(data_loader):
+        
+        # Load and prepare batch
         rgb, depth, mask, loc_x, loc_y, label = batch
+        rgb = rgb.to(device)
+        depth = depth.to(device)
+        mask = mask.to(device)
+        loc_x = loc_x.to(device)
+        loc_y = loc_y.to(device)
+        label = label.to(device)
 
         # Zero gradient
         optimizer.zero_grad()
@@ -48,7 +56,7 @@ def train_one_epoch(model, data_loader, loss_function, optimizer):
     return train_loss
 
 
-def evaluate(model, data_loader, loss_function):
+def evaluate(model, data_loader, loss_function, device):
 
     # Initialise losses
     validation_loss = 0.0
@@ -59,7 +67,15 @@ def evaluate(model, data_loader, loss_function):
 
         # Iterate over batches
         for i, batch in enumerate(data_loader):
+            
+            # Load and prepare batch
             rgb, depth, mask, loc_x, loc_y, label = batch
+            rgb = rgb.to(device)
+            depth = depth.to(device)
+            mask = mask.to(device)
+            loc_x = loc_x.to(device)
+            loc_y = loc_y.to(device)
+            label = label.to(device)
 
             # Make predictions for batch
             encoded, decoded = model(rgb)
@@ -87,6 +103,7 @@ def train(
         early_stopping=False,
         patience=5,
         min_delta=1e-3,
+        device=torch.device("cpu"),
         debug=False):
 
     # Losses
@@ -110,14 +127,14 @@ def train(
             # Train for one epoch
             if debug:
                 with torch.autograd.detect_anomaly():
-                    train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer)
+                    train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
                     train_losses.append(train_loss)
             else:
-                train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer)
+                train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
                 train_losses.append(train_loss)
 
             # Evaluate model
-            validation_accuracy, validation_loss = evaluate(model, validation_data_loader, loss_function)
+            validation_accuracy, validation_loss = evaluate(model, validation_data_loader, loss_function, device)
             validation_losses.append(validation_loss)
 
             print(f"Train: loss={train_loss}")
@@ -138,7 +155,7 @@ def train(
     return train_losses, validation_losses, run_epochs
 
 
-def test(model, test_dataloader):
+def test(model, test_dataloader, device):
     # Accuracy variables
     correct = 0
     total = 0
@@ -149,7 +166,15 @@ def test(model, test_dataloader):
 
     with torch.no_grad():
         for i, batch in enumerate(test_dataloader):
+            
+            # Load and prepare batch
             rgb, depth, mask, loc_x, loc_y, label = batch
+            rgb = rgb.to(device)
+            depth = depth.to(device)
+            mask = mask.to(device)
+            loc_x = loc_x.to(device)
+            loc_y = loc_y.to(device)
+            label = label.to(device)
             
             # Make predictions for batch
             encoded, decoded = model(rgb)

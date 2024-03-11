@@ -1,7 +1,11 @@
 artemis/
 data/
+models/
 nohup.out
-src/1-Baseline
+
+# Data
+*.tar
+*.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

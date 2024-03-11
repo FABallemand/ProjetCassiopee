@@ -33,8 +33,8 @@ def create_optimizer(optimizer_type, model, learning_rate):
 
 
 def plot_results(train_accuracies, train_losses,
-                 validation_accuracies, validation_losses, run_epochs,
-                 architecture, start_timestamp, device,
+                 validation_accuracies, validation_losses,
+                 run_epochs, architecture, start_timestamp, device,
                  loss_function, optimizer_type, epochs,
                  learning_rates, early_stopping, patience, min_delta,
                  test_accuracy, test_confusion_matrix,

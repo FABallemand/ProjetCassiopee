@@ -1,9 +1,30 @@
 # 📝 Notes
 
-## Set-up
-- pip3 install torch==1.13.1+cu116 torchvision==0.14.1+cu116 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu116
+## 🛠️ Set-up
+- https://vulkan.telecom-sudparis.eu/help/
+- Python 3.8.15
+- CUDA 11.5
+- pip3 install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
 - https://pytorch.org/blog/deprecation-cuda-python-support/
 - https://pytorch.org/get-started/previous-versions/
+- Activate Python virtual environment:
+```bash
+cd ../..
+source start
+cd dev/ProjetCassiopee
+```
+
+## 💾 Useful Commands
+```bash
+scp -r /path/to/local/dir user@remotehost:/path/to/remote/dir
+
+nohup python3 main.py &
+
+# https://stackoverflow.com/questions/17385794/how-to-get-the-process-id-to-kill-a-nohup-process
+
+tar -xvf file.tar
+tar -xzvf file.tar.gz
+```
 
 ## 🗂️ Dataset
 - [RGBD-SOD Dataset](https://www.kaggle.com/datasets/thinhhuynh3108/rgbdsod-set1)
@@ -11,15 +32,25 @@
 - [HIC (Hands in Action)](https://paperswithcode.com/dataset/hic)
 - [RGB-D Object Dataset](https://rgbd-dataset.cs.washington.edu/dataset.html)
 - [List of RGBD datasets](http://www.michaelfirman.co.uk/RGBDdatasets/)
+- [Mocaplab Google Drive](https://drive.google.com/drive/folders/1xos4pybtOfltFU0_YPhWLEyWKH5h6SoO)
+- [Motion-X: A Large-scale 3D Expressive Whole-body Human Motion Dataset](https://motion-x-dataset.github.io/)
 
-## Code
+## 🖥️ Code
+- [PyTorch v1.12 Documentation](https://pytorch.org/docs/1.12/)
 - [PyTorch Tutorials](https://github.com/yunjey/pytorch-tutorial/tree/master)
-- [SimCLR Artcle](https://arxiv.org/pdf/2002.05709.pdf)
+- [SimCLR Article](https://arxiv.org/pdf/2002.05709.pdf)
 - [SimCLR in PyTorch](https://medium.com/the-owl/simclr-in-pytorch-5f290cb11dd7)
 - [SimCLR Tutorial](https://deeplearning.neuromatch.io/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/student/W3D3_Tutorial1.html)
 - [SimCLR Tutorial Videos](https://www.youtube.com/playlist?list=PLkBQOLLbi18NYb71nfD5gwwnZY4DPMCXu)
 
+## 🧠 AI
+- [MMAction](https://github.com/open-mmlab/mmaction2)
+- [MMAction graph-based action recognition](https://github.com/open-mmlab/mmaction2/blob/main/configs/skeleton/2s-agcn/README.md)
+- [Two-Stream Adaptive Graph Convolutional Networks for Skeleton-Based Action
+Recognition](https://openaccess.thecvf.com/content_CVPR_2019/papers/Shi_Two-Stream_Adaptive_Graph_Convolutional_Networks_for_Skeleton-Based_Action_Recognition_CVPR_2019_paper.pdf)
+
 ## 📋 ToDo
 - Create proper validation dataloader for RGB-D Object dataset
 - Change plot_results in order to plot architecture like in TensorFlow (https://stackoverflow.com/questions/52468956/how-do-i-visualize-a-net-in-pytorch)
+- Change plot_results in order to write number of samples and batch size
 - Reorganise training functions (keep structure of training in general file and create functions for each model in order to pre-process data, make predictions, compute accuracy and compute loss)
