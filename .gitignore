@@ -1,6 +1,6 @@
 artemis/
 data/
-models/
+train_results/
 nohup.out
 
 # Data

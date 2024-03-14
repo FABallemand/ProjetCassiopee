@@ -1,26 +1,10 @@
 import torch
-import numpy as np
 from sklearn.metrics import confusion_matrix
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 from ...train import create_optimizer
 
 
-def contrastive_loss(encoded_output, output, target):
-    loss = 0
-    return loss
-
-
-def combined_loss(encoded_output_1, output_1, encoded_output_2, output_2, target):
-    loss = 0
-    loss += contrastive_loss(encoded_output_1, encoded_output_2)
-    loss += 0
-    loss += 0
-    return loss
-
-
-def train_one_epoch(model, data_loader, loss_function, optimizer):
+def train_one_epoch(model, data_loader, loss_function, optimizer, device):
 
     # Enable training
     model.train(True)
@@ -34,25 +18,30 @@ def train_one_epoch(model, data_loader, loss_function, optimizer):
 
     # Pass over all batches
     for i, batch in enumerate(data_loader):
+
+        # Load and prepare batch
         rgb, depth, mask, loc_x, loc_y, label = batch
+        rgb = rgb.to(device)
+        depth = depth.to(device)
+        mask = mask.to(device)
+        loc_x = loc_x.to(device)
+        loc_y = loc_y.to(device)
+        label = label.to(device)
 
         # Zero gradient
         optimizer.zero_grad()
 
-        # Prepare batch
-        # Data preprocessing
-
         # Make predictions for batch
-        encoded_output, output = model(rgb)
+        encoded_x, predicted_label = model(rgb)
 
         # Update accuracy variables
-        _, predicted = torch.max(output.data, 1)
+        _, predicted = torch.max(predicted_label.data, 1)
         total += len(label)
         batch_correct = (predicted == label).sum().item()
         correct += batch_correct
 
         # Compute loss
-        loss = loss_function(output, label)
+        loss = loss_function(predicted_label, label)
 
         # Compute gradient loss
         loss.backward()
@@ -66,7 +55,7 @@ def train_one_epoch(model, data_loader, loss_function, optimizer):
         # Log
         if i % 10 == 0:
             # Batch loss
-            print(f"    Batch {i}: accuracy={batch_correct / label.size(0)} | loss={loss}")
+            print(f"    Batch {i:8}: accuracy={batch_correct / label.size(0):.4f} | loss={loss:.4f}")
 
     # Compute validation accuracy and loss
     train_accuracy = correct / total
@@ -75,7 +64,7 @@ def train_one_epoch(model, data_loader, loss_function, optimizer):
     return train_accuracy, train_loss
 
 
-def evaluate(model, data_loader, loss_function):
+def evaluate(model, data_loader, loss_function, device):
 
     # Initialise accuracy variables
     total = 0
@@ -90,21 +79,26 @@ def evaluate(model, data_loader, loss_function):
 
         # Iterate over batches
         for i, batch in enumerate(data_loader):
-            rgb, depth, mask, loc_x, loc_y, label = batch
             
-            # Prepare batch
-            # batch, erased = prep_data(batch, model.K, device)
+            # Load and prepare batch
+            rgb, depth, mask, loc_x, loc_y, label = batch
+            rgb = rgb.to(device)
+            depth = depth.to(device)
+            mask = mask.to(device)
+            loc_x = loc_x.to(device)
+            loc_y = loc_y.to(device)
+            label = label.to(device)
 
             # Make predictions for batch
-            output = model(rgb)
+            encoded_x, predicted_label = model(rgb)
 
             # Update accuracy variables
-            _, predicted = torch.max(output.data, 1)
+            _, predicted = torch.max(predicted_label.data, 1)
             total += len(label)
             correct = (predicted == label).sum().item()
 
             # Compute loss
-            loss = loss_function(output, label)
+            loss = loss_function(predicted_label, label)
 
             # Update batch loss
             validation_loss += loss.item()
@@ -127,6 +121,7 @@ def train(
         early_stopping=False,
         patience=5,
         min_delta=1e-3,
+        device=torch.device("cpu"),
         debug=False):
 
     # Accuracies
@@ -154,21 +149,21 @@ def train(
             # Train for one epoch
             if debug:
                 with torch.autograd.detect_anomaly():
-                    train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer)
+                    train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
                     train_accuracies.append(train_accuracy)
                     train_losses.append(train_loss)
             else:
-                train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer)
+                train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
                 train_accuracies.append(train_accuracy)
                 train_losses.append(train_loss)
 
             # Evaluate model
-            validation_accuracy, validation_loss = evaluate(model, validation_data_loader, loss_function)
+            validation_accuracy, validation_loss = evaluate(model, validation_data_loader, loss_function, device)
             validation_accuracies.append(validation_accuracy)
             validation_losses.append(validation_loss)
 
-            print(f"Train: accuracy={train_accuracy} | loss={train_loss}")
-            print(f"Validation: accuracy={validation_accuracy} | loss={validation_loss}")
+            print(f"Train:      accuracy={train_accuracy:.8f} | loss={train_loss:.8f}")
+            print(f"Validation: accuracy={validation_accuracy:.8f} | loss={validation_loss:.8f}")
 
             # Early stopping
             if early_stopping:
@@ -185,7 +180,7 @@ def train(
     return train_accuracies, train_losses, validation_accuracies, validation_losses, run_epochs
 
 
-def test(model, test_dataloader):
+def test(model, test_dataloader, device=torch.device("cpu")):
     # Accuracy variables
     correct = 0
     total = 0
@@ -196,16 +191,21 @@ def test(model, test_dataloader):
 
     with torch.no_grad():
         for i, batch in enumerate(test_dataloader):
+            
+            # Load and prepare batch
             rgb, depth, mask, loc_x, loc_y, label = batch
-
-            # Prepare batch
-            # Data preprocessing?
+            rgb = rgb.to(device)
+            depth = depth.to(device)
+            mask = mask.to(device)
+            loc_x = loc_x.to(device)
+            loc_y = loc_y.to(device)
+            label = label.to(device)
             
             # Make predictions for batch
-            output = model(rgb)
+            encoded_x, predicted_label = model(rgb)
 
             # Update accuracy variables
-            _, predicted = torch.max(output.data, 1)
+            _, predicted = torch.max(predicted_label.data, 1)
             total += len(label)
             correct += (predicted == label).sum().item()
 

@@ -13,7 +13,6 @@ class CombinedModel(nn.Module):
 
     def forward(self, x):
         # Forward pass through autoencoder and encoder
-        encoded_output, reconstructed_output = self.autoencoder(x)
-        output = self.encoder(reconstructed_output)
-        return encoded_output, output
-
+        encoded_x, reconstructed_x = self.autoencoder(x)
+        predicted_label = self.encoder(reconstructed_x)
+        return encoded_x, predicted_label

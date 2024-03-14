@@ -26,6 +26,9 @@ def create_optimizer(optimizer_type, model, learning_rate):
     if optimizer_type == "Adam":
         optimizer = torch.optim.Adam(model.parameters(),
                                      lr=learning_rate)
+    elif optimizer_type == "SGD":
+        optimizer = torch.optim.SGD(model.parameters(),
+                                    lr=learning_rate)
     else:
         print(f"Unknow optimizer type: {optimizer_type}")
         
