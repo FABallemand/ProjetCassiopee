@@ -4,7 +4,7 @@ import random
 import cv2
 import torch
 import torchvision
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 DEFAULT_TRANSOFRMATION = torchvision.transforms.Compose([torchvision.transforms.ToTensor()])
 

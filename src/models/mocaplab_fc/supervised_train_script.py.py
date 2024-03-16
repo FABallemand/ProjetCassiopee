@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import datetime
 import numpy as np
 
@@ -6,17 +7,14 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from ...setup import setup_python, setup_pytorch
-from train import *
-from ...dataset.mocaplab import MocaplabDataset
-from fc import MocaplabFC
+sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee")
+from src.setup import setup_python, setup_pytorch
+from src import plot_results
+from src.dataset import MocaplabDataset
+from src.models.mocaplab_fc import MocaplabFC, train, test
 
 
 if __name__=='__main__':
-    # Change working directory
-    # abspath = os.path.abspath(__file__)
-    # dname = os.path.dirname(abspath)
-    # os.chdir(dname)
 
     # Begin set-up
     print("#### Set-Up ####")

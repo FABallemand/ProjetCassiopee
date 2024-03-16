@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import datetime
 import numpy as np
 
@@ -6,17 +7,13 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from ...setup import setup_python, setup_pytorch
-from ...train import plot_results
-from ...dataset.rgbd_objects import RGBDObjectDataset, RGBDObjectDataset_Contrast
-from . import CombinedModel, train, test
-
+sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee")
+from src.setup import setup_python, setup_pytorch
+from src import plot_results
+from src.dataset import RGBDObjectDataset, RGBDObjectDataset_Contrast
+from src.models.combined_model import CombinedModel, train, test
 
 if __name__=='__main__':
-    # Change working directory
-    # abspath = os.path.abspath(__file__)
-    # dname = os.path.dirname(abspath)
-    # os.chdir(dname)
 
     # Begin set-up
     print("#### Set-Up ####")

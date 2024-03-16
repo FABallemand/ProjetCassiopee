@@ -1,3 +1,4 @@
+import os
 import sys
 
 import torch
@@ -5,6 +6,7 @@ import torch
 def setup_python():
     # Check Python version
     print(f"sys.version = {sys.version}")
+    print(f"os.getcwd() = {os.getcwd()}")
 
 
 def setup_pytorch() -> torch.device:

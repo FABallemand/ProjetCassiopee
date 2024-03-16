@@ -1,5 +1,6 @@
 artemis/
 data/
+!data/*/test.ipynb
 train_results/
 nohup.out
 
