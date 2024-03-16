@@ -1,10 +1,7 @@
 import os
-import logging
-import cv2
+import random
 import pandas as pd
 import csv
-import torch
-import torchvision
 from torch.utils.data import Dataset
 
 class MocaplabDataset(Dataset):
@@ -12,75 +9,91 @@ class MocaplabDataset(Dataset):
     PyTorch dataset for the Mocaplab dataset.
     """
 
-    def __init__(self, path, all_bones=False, train_test_ratio=8, validation_percentage=0.01):
+    def __init__(self, path, padding=True, train_test_ratio=8, validation_percentage=0.01, nb_samples=None):
         super().__init__()
         self.path = path
-        self.all_bones = all_bones
+        self.padding = padding
         self.train_test_ratio = train_test_ratio
         self.validation_percentage = validation_percentage
 
-        self.data = []
-        self.labels = []
+        self.class_dict = None
+        self.max_length = 0
 
-        self.load_data()
+        self.x = []
+        self.y = []
+        self.labels = None
+        self.removed = []
+
+        self._create_labels_dict()
+        self._load_data()
+
+        if nb_samples is not None:
+            # Shuffle data in order to have multiple classes
+            x_and_y = list(zip(self.x, self.y))
+            random.shuffle(x_and_y)
+            x_and_y = x_and_y[:nb_samples]
+            self.x = [x for x,y in x_and_y]
+            self.y = [y for x,y in x_and_y]
 
     def __len__(self):
-        return len(self.labels)
-
-    def __getitem__(self, nom):
-        data_path = os.path.join(self.path, self.data[nom])
-        with open(data_path+'.csv', "r") as file:
-            reader = csv.reader(file)
-            data = list(reader)
-
-        # Extract frame, time and coordinates columns
-        frames = [int(row[0]) for row in data[2:]]
-        times = [float(row[1]) for row in data[2:]]
-        coordinates = [[(row[i], row[i+1], row[i+2]) for i in range(2, len(row)-2, 3)] for row in data[2:]]
-
-        label = self.labels[nom]
-
-        return frames, times, coordinates, label
-
-    def load_data(self):
-        classes = pd.read_csv("Annotation_gloses.csv", sep="\t")
-        classes.dropna(inplace=True)
-        class_dict = {nom: classe for nom, classe in zip(classes["Nom.csv"], classes["Mono/Bi"])}
-        self.labels = class_dict
-        existing = os.listdir("Cassiopée") if not self.all_bones else os.listdir("Cassiopée_Allbones")
-        for nom in class_dict:
-            if nom+".csv" not in existing:
-                continue
-            else:
-                if not self.all_bones :
-                    self.ajouter_cellule_vide("Cassiopée/"+nom+".csv", 1, 1)
-                obj = pd.read_csv("Cassiopée/"+nom+".csv", sep=";")
-                self.data.append(obj)
-        # get the maximum nuumber of frames
-        max_length = max([len(data) for data in self.data])
-        for data in self.data :
-            # pad the data to the maximum length
-            data = self.pad_max(data, max_length)
+        return len(self.y)
     
-    def ajouter_cellule_vide(csv_file, row_index, col_index):
-        with open(csv_file, "r") as file:
-            reader = csv.reader(file, delimiter=";")
-            data = list(reader)
-
-        if row_index < len(data):
-            if col_index < len(data[row_index]):
-                data[row_index].insert(col_index, "")
-
-                with open(csv_file, "w", newline="") as file:
-                    writer = csv.writer(file, delimiter=";")
-                    writer.writerows(data)
-                # print("Cellule vide ajoutée avec succès.")
-            else:
-                pass
-                # print("Index de colonne non valide.")
-        # else:
-            # print("Index de ligne non valide.")
+    def _create_labels_dict(self):
+        self.class_dict = {"Mono": 0, "Bi": 1}
+        return self.class_dict
     
-    def pad_max(self, data, max_length):
-        # Pad the data to the maximum length
-        return data + [0] * (max_length - len(data))
+    def _load_data(self):
+        # Retrieve labels
+        labels = pd.read_csv(os.path.join(os.path.dirname(self.path),
+                                          "Annotation_gloses.csv"), sep="\t")
+        labels.dropna(inplace=True)
+        self.labels = {n: c for n, c in zip(labels["Nom.csv"], labels["Mono/Bi"])}
+        
+        # Retrieve files
+        files = os.listdir(self.path)
+        for name, label in self.labels.items():
+            filename = name + ".csv"
+            if filename not in files:
+                self.removed.append(filename)
+            else:
+                self.x.append(filename)
+                self.y.append(self.class_dict[label])
+
+                # Retrieve max length
+                data = pd.read_csv(os.path.join(self.path, filename), sep=";", header=[0,1])
+                length = data.shape[0]
+                if length > self.max_length:
+                    self.max_length = length
+
+    def __getitem__(self, idx):
+        data_path = os.path.join(self.path, self.x[idx])
+
+        data = pd.read_csv(data_path, sep=";", header=[0,1])
+        label = self.y[idx]
+
+        if self.padding:
+            nb_padding_rows = self.max_length - data.shape[0]
+            empty_rows = {c: [0 for _ in range(nb_padding_rows)] for c in data.columns}
+            empty_data = pd.DataFrame(empty_rows)
+            data = pd.concat([data, empty_data], ignore_index=True)
+            data = data.to_numpy()
+        return data, label
+    
+    # def _add_empty_cell(csv_file, row_index, col_index):
+    #     with open(csv_file, "r") as file:
+    #         reader = csv.reader(file, delimiter=";")
+    #         data = list(reader)
+
+    #     if row_index < len(data):
+    #         if col_index < len(data[row_index]):
+    #             data[row_index].insert(col_index, "")
+
+    #             with open(csv_file, "w", newline="") as file:
+    #                 writer = csv.writer(file, delimiter=";")
+    #                 writer.writerows(data)
+    #             # print("Cellule vide ajoutée avec succès.")
+    #         else:
+    #             pass
+    #             # print("Index de colonne non valide.")
+    #     # else:
+    #         # print("Index de ligne non valide.")
