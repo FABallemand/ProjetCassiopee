@@ -16,7 +16,11 @@ cd dev/ProjetCassiopee
 
 ## 💾 Useful Commands
 ```bash
+# Copy folder/file from local to server
 scp -r /path/to/local/dir user@remotehost:/path/to/remote/dir
+
+# Download Google Drive folder/file
+gdown --folder link/to/folder -O /path/to/dir
 
 nohup python3 main.py &
 

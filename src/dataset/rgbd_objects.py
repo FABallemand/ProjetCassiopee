@@ -70,57 +70,12 @@ class RGBDObjectDataset(Dataset):
 
     def __len__(self):
         return len(self.y)
-
-    def _load_item_data(self, idx, data_path):
-
-        # RGB Data
-        rgb = -1
-        if "rgb" in self.modalities:
-            rgb = cv2.imread(data_path + ".png")
-            rgb = self.transformation(rgb)
-
-        # Depth Data
-        depth = -1
-        if "depth" in self.modalities:
-            depth = cv2.imread(data_path + "_depth.png")
-            depth = self.transformation(depth)
-
-        # Mask Data
-        mask = -1
-        if "mask" in self.modalities:
-            mask = cv2.imread(data_path + "_mask.png")
-            mask = self.transformation(mask)
-        
-        # Location Data
-        loc_x = -1
-        loc_y = -1
-        if "loc" in self.modalities:
-            with open(data_path + "_loc.txt", "r") as loc_file:
-                loc_x, loc_y = loc_file.readlines()[0].split(",")
-                loc_x = int(loc_x)
-                loc_y = int(loc_y)
-
-        # Label
-        label = self.y[idx]
-
-        return rgb, depth, mask, loc_x, loc_y, label
-
-    
-    def __getitem__(self, idx):
-        data_path = os.path.join(self.path,
-                                 "_".join(self.x[idx].split("_")[:-3]),
-                                 "_".join(self.x[idx].split("_")[:-2]),
-                                 self.x[idx])
-        
-        rgb, depth, mask, loc_x, loc_y, label = self._load_item_data(idx, data_path)
-
-        return rgb, depth, mask, loc_x, loc_y, label
     
     def _create_labels_dict(self):
         classes = os.listdir(self.path)
         classes = [c for c in classes if os.path.isdir(os.path.join(self.path, c))]
         classes = sorted(classes)
-        self.class_dict = {c: i for i,c in enumerate(classes)}
+        self.class_dict = {c: i for i, c in enumerate(classes)}
         return self.class_dict
     
     def _load_data(self):
@@ -182,6 +137,49 @@ class RGBDObjectDataset(Dataset):
 
                 self.y += [self.class_dict[c]] * nb_new
 
+    def _load_item_data(self, idx, data_path):
+
+        # RGB Data
+        rgb = -1
+        if "rgb" in self.modalities:
+            rgb = cv2.imread(data_path + ".png")
+            rgb = self.transformation(rgb)
+
+        # Depth Data
+        depth = -1
+        if "depth" in self.modalities:
+            depth = cv2.imread(data_path + "_depth.png")
+            depth = self.transformation(depth)
+
+        # Mask Data
+        mask = -1
+        if "mask" in self.modalities:
+            mask = cv2.imread(data_path + "_mask.png")
+            mask = self.transformation(mask)
+        
+        # Location Data
+        loc_x = -1
+        loc_y = -1
+        if "loc" in self.modalities:
+            with open(data_path + "_loc.txt", "r") as loc_file:
+                loc_x, loc_y = loc_file.readlines()[0].split(",")
+                loc_x = int(loc_x)
+                loc_y = int(loc_y)
+
+        # Label
+        label = self.y[idx]
+
+        return rgb, depth, mask, loc_x, loc_y, label
+    
+    def __getitem__(self, idx):
+        data_path = os.path.join(self.path,
+                                 "_".join(self.x[idx].split("_")[:-3]),
+                                 "_".join(self.x[idx].split("_")[:-2]),
+                                 self.x[idx])
+        
+        rgb, depth, mask, loc_x, loc_y, label = self._load_item_data(idx, data_path)
+
+        return rgb, depth, mask, loc_x, loc_y, label
 
 
 class RGBDObjectDataset_Contrast(RGBDObjectDataset):
