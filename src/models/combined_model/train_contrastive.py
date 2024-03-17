@@ -238,7 +238,7 @@ def train(
     return train_accuracies, train_losses, validation_accuracies, validation_losses, run_epochs
 
 
-def test(model, test_dataloader, device):
+def test(model, test_data_loader, device):
     # Accuracy variables
     correct = 0
     total = 0
@@ -248,7 +248,7 @@ def test(model, test_dataloader, device):
     all_predicted = None
 
     with torch.no_grad():
-        for i, batch in enumerate(test_dataloader):
+        for i, batch in enumerate(test_data_loader):
             
             # Load and prepare batch
             p_data_1, p_data_2, n_data = batch

@@ -141,7 +141,7 @@ def train(
     for epochs, learning_rate in list(zip(epochs_list, learning_rates_list)):
 
         # Create optimizer
-        optimizer = create_optimizer(optimizer_type, model, learning_rate)
+        optimizer = create_optimizer(optimizer_type, model, learning_rate, momentum=0.6)
 
         for epoch in range(epochs):
             print(f"#### EPOCH {epoch} ####")
@@ -180,7 +180,7 @@ def train(
     return train_accuracies, train_losses, validation_accuracies, validation_losses, run_epochs
 
 
-def test(model, test_dataloader, device=torch.device("cpu")):
+def test(model, test_data_loader, device=torch.device("cpu")):
     # Accuracy variables
     correct = 0
     total = 0
@@ -190,7 +190,7 @@ def test(model, test_dataloader, device=torch.device("cpu")):
     all_predicted = None
 
     with torch.no_grad():
-        for i, batch in enumerate(test_dataloader):
+        for i, batch in enumerate(test_data_loader):
             
             # Load and prepare batch
             rgb, depth, mask, loc_x, loc_y, label = batch

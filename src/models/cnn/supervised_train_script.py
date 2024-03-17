@@ -6,6 +6,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
+import torchview
 
 sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee")
 from src.setup import setup_python, setup_pytorch
@@ -37,12 +38,11 @@ if __name__=='__main__':
     # Training parameters
     BATCH_SIZE = 128 # Batch size
 
-    # LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
-    LOSS_FUNCTION = torch.nn.MSELoss() # Loss function
-    OPTIMIZER_TYPE = "Adam"                     # Type of optimizer
+    LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
+    OPTIMIZER_TYPE = "SGD"                     # Type of optimizer
 
-    EPOCHS = [32, 16, 8, 4]                     # Number of epochs
-    LEARNING_RATES = [0.1, 0.01, 0.001, 0.0001] # Learning rates
+    EPOCHS = [1000]          # Number of epochs
+    LEARNING_RATES = [0.001] # Learning rates
     
     EARLY_STOPPING = False # Early stopping flag
     PATIENCE = 10          # Early stopping patience
@@ -96,8 +96,7 @@ if __name__=='__main__':
     start_timestamp = datetime.now()
 
     # Create path for saving things...
-    model_path = f"models/model_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
-    # model_path = f"test/model_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
+    model_path = f"train_results/cnn_supervised_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
 
     # Begin training
     print("#### Training ####")
@@ -122,16 +121,20 @@ if __name__=='__main__':
     # Test model
     test_acc, test_confusion_matrix = test(model, test_data_loader, DEVICE)
 
+    # Save model
+    torch.save(model.state_dict(), model_path)
+
     # Plot results
     plot_results(train_acc, train_loss,
                  val_acc, val_loss,
                  run_epochs, type(model).__name__, start_timestamp, DEVICE,
                  LOSS_FUNCTION, OPTIMIZER_TYPE,
                  EPOCHS, LEARNING_RATES, EARLY_STOPPING, PATIENCE, MIN_DELTA,
-                 test_acc, test_confusion_matrix, stop_timestamp, model_path)
+                 test_acc, test_confusion_matrix, stop_timestamp, model_path + "_res")
     
-    # Save model
-    torch.save(model.state_dict(), model_path)
+    # Plot model architecture
+    graph = torchview.draw_graph(model, input_size=(BATCH_SIZE, 3, INPUT_SIZE[0], INPUT_SIZE[1]), device=DEVICE,
+                                 save_graph=True, filename=model_path.split("/")[1] + "_arc", directory=model_path.split("/")[0])
     
     # End training
     print("#### End ####")

@@ -9,6 +9,9 @@ if __name__=='__main__':
     os.chdir(dname)
 
     # Execute Python script
-    os.system("python src/models/cnn/supervised_train_script.py")
-    # os.system("python src/models/combined_model/supervised_contrastive_train_script.py")
-    # os.system("python src/models/mocaplab_fc/supervised_train_script.py")
+    script = "src/models/cnn/supervised_train_script.py"
+    log = "supervised_cnn.log"
+    print(f"Executing: pyhton3 {script} > {log}")
+    os.system(f"python3 {script} > {log}")
+    # os.system("python3 src/models/combined_model/supervised_contrastive_train_script.py")
+    # os.system("python3 src/models/mocaplab_fc/supervised_train_script.py")

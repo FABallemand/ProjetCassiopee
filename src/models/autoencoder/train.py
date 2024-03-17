@@ -155,7 +155,7 @@ def train(
     return train_losses, validation_losses, run_epochs
 
 
-def test(model, test_dataloader, device):
+def test(model, test_data_loader, device):
     # Accuracy variables
     correct = 0
     total = 0
@@ -165,7 +165,7 @@ def test(model, test_dataloader, device):
     all_predicted = None
 
     with torch.no_grad():
-        for i, batch in enumerate(test_dataloader):
+        for i, batch in enumerate(test_data_loader):
             
             # Load and prepare batch
             rgb, depth, mask, loc_x, loc_y, label = batch

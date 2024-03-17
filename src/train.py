@@ -4,7 +4,7 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-def create_optimizer(optimizer_type, model, learning_rate):
+def create_optimizer(optimizer_type, model, learning_rate, momentum=0):
     """
     Create optimizer based on the PyTorch name of the optimizer.
 
@@ -28,7 +28,8 @@ def create_optimizer(optimizer_type, model, learning_rate):
                                      lr=learning_rate)
     elif optimizer_type == "SGD":
         optimizer = torch.optim.SGD(model.parameters(),
-                                    lr=learning_rate)
+                                    lr=learning_rate,
+                                    momentum=momentum)
     else:
         print(f"Unknow optimizer type: {optimizer_type}")
         
@@ -276,7 +277,7 @@ def train(
     return train_accuracies, train_losses, validation_accuracies, validation_losses, run_epochs
 
 
-def test(model, test_dataloader):
+def test(model, test_data_loader):
 
     # Accuracy variables
     correct = 0
@@ -287,7 +288,7 @@ def test(model, test_dataloader):
     all_predicted = None
 
     with torch.no_grad():
-        for i, batch in enumerate(test_dataloader):
+        for i, batch in enumerate(test_data_loader):
             rgb, depth, mask, loc_x, loc_y, label = batch
 
             # Prepare batch

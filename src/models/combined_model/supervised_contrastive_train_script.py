@@ -94,8 +94,7 @@ if __name__=='__main__':
     start_timestamp = datetime.now()
 
     # Create path for saving things...
-    model_path = f"models/model_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
-    # model_path = f"test/model_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
+    model_path = f"train_results/model_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
 
     # Begin training
     print("#### Training ####")
