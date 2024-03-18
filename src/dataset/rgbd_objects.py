@@ -15,7 +15,9 @@ class RGBDObjectDataset(Dataset):
     Link: https://rgbd-dataset.cs.washington.edu/dataset.html
     """
 
-    def __init__(self, path, mode, class_names=None, modalities=["rgb"], transformation=DEFAULT_TRANSOFRMATION, train_test_ratio=8, validation_percentage=0.01, nb_samples=None):
+    def __init__(self, path, mode, class_names=None, modalities=["rgb"],
+                 transformation=DEFAULT_TRANSOFRMATION, crop_transformation=None,
+                 train_test_ratio=8, validation_percentage=0.01, nb_samples=None):
         """
         Initialise RGBDObjectDataset instance.
 
@@ -31,6 +33,8 @@ class RGBDObjectDataset(Dataset):
             Modalities to load: "rgb", "depth", "mask", "loc", by default ["rgb"]
         transformation : torchvision.transforms.Compose, optional
             Transformation to apply to image modalities, by default DEFAULT_TRANSOFRMATION
+        crop_transformation : torchvision.transforms.Compose, optional
+            Additional custom crop transformation to apply to image modalities, by default None
         train_test_ratio : int, optional
             Ratio of train images over test images, by default 8
         validation_percentage : float, optional
@@ -47,6 +51,7 @@ class RGBDObjectDataset(Dataset):
         self.transformation = transformation
         if self.transformation is None:
             self.transformation = DEFAULT_TRANSOFRMATION
+        self.crop_transformation = crop_transformation
         self.train_test_ratio = train_test_ratio
         self.validation_percentage = validation_percentage
         self.nb_samples = nb_samples
@@ -139,6 +144,17 @@ class RGBDObjectDataset(Dataset):
 
     def _load_item_data(self, idx, data_path):
 
+        # Location Data
+        loc_x = -1
+        loc_y = -1
+        new_loc_x = -1
+        new_loc_y = -1
+        if "loc" in self.modalities or self.crop_transformation is not None:
+            with open(data_path + "_loc.txt", "r") as loc_file:
+                loc_x, loc_y = loc_file.readlines()[0].split(",")
+                loc_x = int(loc_x)
+                loc_y = int(loc_y)
+
         # RGB Data
         rgb = -1
         if "rgb" in self.modalities:
@@ -156,18 +172,13 @@ class RGBDObjectDataset(Dataset):
         if "mask" in self.modalities:
             mask = cv2.imread(data_path + "_mask.png")
             mask = self.transformation(mask)
-        
-        # Location Data
-        loc_x = -1
-        loc_y = -1
-        if "loc" in self.modalities:
-            with open(data_path + "_loc.txt", "r") as loc_file:
-                loc_x, loc_y = loc_file.readlines()[0].split(",")
-                loc_x = int(loc_x)
-                loc_y = int(loc_y)
 
         # Label
         label = self.y[idx]
+
+        # Crop transformation
+        if self.crop_transformation is not None and loc_x != -1 and loc_y !=1:
+            rgb, depth, mask, loc_x, loc_y = self.crop_transformation(rgb, depth, mask, loc_x, loc_y)
 
         return rgb, depth, mask, loc_x, loc_y, label
     
@@ -190,7 +201,9 @@ class RGBDObjectDataset_Supervised_Contrast(RGBDObjectDataset):
     Link: https://rgbd-dataset.cs.washington.edu/dataset.html
     """
 
-    def __init__(self, path, mode, class_names=None, modalities=["rgb"], transformation=DEFAULT_TRANSOFRMATION, train_test_ratio=8, validation_percentage=0.01, nb_samples=None):
+    def __init__(self, path, mode, class_names=None, modalities=["rgb"],
+                 transformation=DEFAULT_TRANSOFRMATION, crop_transformation=None,
+                 train_test_ratio=8, validation_percentage=0.01, nb_samples=None):
         """
         Initialise RGBDObjectDataset_Contrast instance.
 
@@ -206,6 +219,8 @@ class RGBDObjectDataset_Supervised_Contrast(RGBDObjectDataset):
             Modalities to load: "rgb", "depth", "mask", "loc", by default ["rgb"]
         transformation : torchvision.transforms.Compose, optional
             Transformation to apply to image modalities, by default DEFAULT_TRANSOFRMATION
+        crop_transformation : torchvision.transforms.Compose, optional
+            Additional custom crop transformation to apply to image modalities, by default None
         train_test_ratio : int, optional
             Ratio of train images over test images, by default 8
         validation_percentage : float, optional
@@ -213,7 +228,7 @@ class RGBDObjectDataset_Supervised_Contrast(RGBDObjectDataset):
         nb_samples : int, optional
             Maximum number of samples in the dataset, by default None
         """
-        super().__init__(path, mode, class_names, modalities, transformation, train_test_ratio, validation_percentage, nb_samples)
+        super().__init__(path, mode, class_names, modalities, transformation, crop_transformation, train_test_ratio, validation_percentage, nb_samples)
 
     def __getitem__(self, p_idx_1):
 
@@ -260,7 +275,9 @@ class RGBDObjectDataset_Unsupervised_Contrast(RGBDObjectDataset):
     Link: https://rgbd-dataset.cs.washington.edu/dataset.html
     """
 
-    def __init__(self, path, mode, class_names=None, modalities=["rgb"], transformation=DEFAULT_TRANSOFRMATION, augmentation_transformation=None, train_test_ratio=8, validation_percentage=0.01, nb_samples=None):
+    def __init__(self, path, mode, class_names=None, modalities=["rgb"],
+                 transformation=DEFAULT_TRANSOFRMATION, crop_transformation=None,
+                 train_test_ratio=8, validation_percentage=0.01, nb_samples=None):
         """
         Initialise RGBDObjectDataset_Contrast instance.
 
@@ -276,8 +293,8 @@ class RGBDObjectDataset_Unsupervised_Contrast(RGBDObjectDataset):
             Modalities to load: "rgb", "depth", "mask", "loc", by default ["rgb"]
         transformation : torchvision.transforms.Compose, optional
             Transformation to apply to image modalities, by default DEFAULT_TRANSOFRMATION
-        augmentation_transformation : torchvision.transforms.Compose, optional
-            Transformation to apply to image modalities for data augmentation, by default None
+        crop_transformation : torchvision.transforms.Compose, optional
+            Additional custom crop transformation to apply to image modalities, by default None
         train_test_ratio : int, optional
             Ratio of train images over test images, by default 8
         validation_percentage : float, optional
@@ -285,8 +302,7 @@ class RGBDObjectDataset_Unsupervised_Contrast(RGBDObjectDataset):
         nb_samples : int, optional
             Maximum number of samples in the dataset, by default None
         """
-        super().__init__(path, mode, class_names, modalities, transformation, train_test_ratio, validation_percentage, nb_samples)
-        self.augmentation_transformation = augmentation_transformation # or in training function
+        super().__init__(path, mode, class_names, modalities, transformation, crop_transformation, train_test_ratio, validation_percentage, nb_samples)
 
     def __getitem__(self, p_idx):
 
@@ -298,8 +314,6 @@ class RGBDObjectDataset_Unsupervised_Contrast(RGBDObjectDataset):
                                    p_subclass,
                                    self.x[p_idx])
         p_data = self._load_item_data(p_idx, p_data_path)
-
-        # Apply augmentation transformation here or in training function...
         
         # Load negative data
         n_idx = random.randint(0, len(self) - 1)
