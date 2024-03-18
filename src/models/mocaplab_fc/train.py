@@ -3,11 +3,12 @@ from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
+from src.train import create_optimizer
 
 def train_one_epoch(model, data_loader, loss_function, optimizer, device):
 
     # Enable training
-    model.train(True)
+    model.train(True).double()
 
     # Initialise accuracy variables
     total = 0
@@ -20,21 +21,28 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, device):
     for i, batch in enumerate(data_loader):
 
         # Load and prepare batch
-        frames, times, coordinates, label = batch
+        data, label = batch
+        data = data.to(device)
+        label = label.to(device)
 
         # Zero gradient
         optimizer.zero_grad()
 
         # Make predictions for batch
-        output = model(frames, times, coordinates)
+        flattened = torch.flatten(data[-1,:])
+        output = model(flattened.double())
 
         # Update accuracy variables
-        _, predicted = torch.max(output.data, 1)
+        _, predicted = torch.max(output.data, 0)
         total += len(label)
+        print(predicted, label)
         batch_correct = (predicted == label).sum().item()
         correct += batch_correct
 
         # Compute loss
+        print('output :', output, ' Shape : ', output.shape)
+        print('label :', label, ' Shape : ', label.shape)
+        exit(0)
         loss = loss_function(output, label)
 
         # Compute gradient loss
@@ -75,12 +83,12 @@ def evaluate(model, data_loader, loss_function, device):
         for i, batch in enumerate(data_loader):
             
             # Load and prepare batch
-            frames, times, coordinates, label = batch
-            coordinates = coordinates.to(device)
+            data, label = batch
+            data = data.to(device)
             label = label.to(device)
 
             # Make predictions for batch
-            output = model(coordinates)
+            output = model(data)
 
             # Update accuracy variables
             _, predicted = torch.max(output.data, 1)
@@ -183,16 +191,12 @@ def test(model, test_data_loader, device=torch.device("cpu")):
         for i, batch in enumerate(test_data_loader):
             
             # Load and prepare batch
-            rgb, depth, mask, loc_x, loc_y, label = batch
-            rgb = rgb.to(device)
-            depth = depth.to(device)
-            mask = mask.to(device)
-            loc_x = loc_x.to(device)
-            loc_y = loc_y.to(device)
+            data, label = batch
+            data = data.to(device)
             label = label.to(device)
-            
+
             # Make predictions for batch
-            output = model(rgb)
+            output = model(data)
 
             # Update accuracy variables
             _, predicted = torch.max(output.data, 1)

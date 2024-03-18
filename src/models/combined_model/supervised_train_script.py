@@ -10,9 +10,9 @@ from torchvision import transforms
 sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee")
 from src.setup import setup_python, setup_pytorch
 from src import plot_results
-from src.dataset import MocaplabDataset
-from src.models.mocaplab_fc import MocaplabFC, train, test
-
+from src.dataset import RGBDObjectDataset
+from src.models.combined_model import CombinedModel
+from src.models.combined_model.train import train, test
 
 if __name__=='__main__':
 
@@ -35,14 +35,13 @@ if __name__=='__main__':
     NB_TEST_SAMPLES = None
 
     # Training parameters
-    BATCH_SIZE = 128 # Batch size
+    BATCH_SIZE = 10 # Batch size
 
-    # LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
-    LOSS_FUNCTION = torch.nn.MSELoss() # Loss function
-    OPTIMIZER_TYPE = "SGD"                     # Type of optimizer
+    LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
+    OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
 
-    EPOCHS = [32, 16, 8, 4]                     # Number of epochs
-    LEARNING_RATES = [0.1, 0.01, 0.001, 0.0001] # Learning rates
+    EPOCHS = [1000]         # Number of epochs
+    LEARNING_RATES = [0.01] # Learning rates
     
     EARLY_STOPPING = False # Early stopping flag
     PATIENCE = 10          # Early stopping patience
@@ -53,16 +52,24 @@ if __name__=='__main__':
     # Datasets
     print("#### Datasets ####")
 
-    dataset = MocaplabDataset(path="Cassiopée/Mocaplab_data",
-                                    all_bones=False,
-                                    train_test_ratio=8,
-                                    validation_percentage=0.01)
+    train_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
+                                               mode="train",
+                                               transformation=TRANSFORMATION,
+                                               nb_samples=NB_TRAIN_SAMPLES)
     
-    # Split dataset
-    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [int(len(dataset)*0.8), int(len(dataset)*0.2)])
+    validation_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
+                                                    mode="validation",
+                                                    transformation=TRANSFORMATION,
+                                                    nb_samples=NB_VALIDATION_SAMPLES)
     
-    print(f"Train dataset -> {len(train_dataset.dataset.y)} samples")
-    print(f"Test dataset -> {len(test_dataset.dataset.y)} samples")
+    test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
+                                              mode="test",
+                                              transformation=TRANSFORMATION,
+                                              nb_samples=NB_TEST_SAMPLES)
+    
+    print(f"Train dataset -> {len(train_dataset.y)} samples")
+    print(f"Validation dataset -> {len(validation_dataset.y)} samples")
+    print(f"Test dataset -> {len(test_dataset.y)} samples")
     
     # Data loaders
     print("#### Data Loaders ####")
@@ -71,6 +78,10 @@ if __name__=='__main__':
                                    batch_size=BATCH_SIZE,
                                    shuffle=True)
     
+    validation_data_loader = DataLoader(validation_dataset,
+                                        batch_size=BATCH_SIZE,
+                                        shuffle=True)
+    
     test_data_loader = DataLoader(test_dataset,
                                   batch_size=BATCH_SIZE,
                                   shuffle=True)
@@ -78,14 +89,13 @@ if __name__=='__main__':
     # Create neural network
     print("#### Model ####")
 
-    model = FC(nb_classes=len(train_dataset.dataset.labels)).to(DEVICE)
+    model = CombinedModel().to(DEVICE)
 
     # Save training time start
     start_timestamp = datetime.now()
 
     # Create path for saving things...
-    model_path = f"models/model_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
-    # model_path = f"test/model_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
+    model_path = f"train_results/model_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
 
     # Begin training
     print("#### Training ####")
@@ -93,7 +103,7 @@ if __name__=='__main__':
     # Train model
     train_acc, train_loss, val_acc, val_loss, run_epochs = train(model,
                                                                  train_data_loader,
-                                                                 test_data_loader,
+                                                                 validation_data_loader,
                                                                  LOSS_FUNCTION,
                                                                  OPTIMIZER_TYPE,
                                                                  EPOCHS,

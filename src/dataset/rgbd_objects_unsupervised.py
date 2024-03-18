@@ -1,3 +1,5 @@
+""" The same as rgbd_objects excepts that the get_item only returns two images from different classes """
+
 import os
 import logging
 import random
@@ -182,10 +184,9 @@ class RGBDObjectDataset(Dataset):
         return rgb, depth, mask, loc_x, loc_y, label
 
 
-class RGBDObjectDataset_Supervised_Contrast(RGBDObjectDataset):
+class RGBDObjectDataset_Contrast(RGBDObjectDataset):
     """
-    PyTorch dataset for the RGB-D Objects dataset.
-    Task: supervised learning with contrastive learning.
+    PyTorch dataset for the RGB-D Objects dataset and contrastive learning.
     Only override __getitem__ method.
     Link: https://rgbd-dataset.cs.washington.edu/dataset.html
     """
@@ -226,17 +227,6 @@ class RGBDObjectDataset_Supervised_Contrast(RGBDObjectDataset):
                                      self.x[p_idx_1])
         p_data_1 = self._load_item_data(p_idx_1, p_data_path_1)
 
-        # Load positive data 2
-        p_idx_2 = random.randint(0, len(self) - 1)
-        while not self.x[p_idx_2].startswith(p_class):
-            p_idx_2 = random.randint(0, len(self) - 1)
-        p_subclass_2 = "_".join(self.x[p_idx_2].split("_")[:-2])
-        p_data_path_2 = os.path.join(self.path,
-                                     p_class,
-                                     p_subclass_2,
-                                     self.x[p_idx_2])
-        p_data_2 = self._load_item_data(p_idx_2, p_data_path_2)
-        
         # Load negative data
         n_idx = random.randint(0, len(self) - 1)
         while self.x[n_idx].startswith(p_class):
@@ -249,68 +239,4 @@ class RGBDObjectDataset_Supervised_Contrast(RGBDObjectDataset):
                                    self.x[n_idx])        
         n_data = self._load_item_data(n_idx, n_data_path)
 
-        return [p_data_1, p_data_2, n_data]
-    
-
-class RGBDObjectDataset_Unsupervised_Contrast(RGBDObjectDataset):
-    """
-    PyTorch dataset for the RGB-D Objects dataset.
-    Task: unsupervised learning with contrastive learning.
-    Only override __getitem__ method.
-    Link: https://rgbd-dataset.cs.washington.edu/dataset.html
-    """
-
-    def __init__(self, path, mode, class_names=None, modalities=["rgb"], transformation=DEFAULT_TRANSOFRMATION, augmentation_transformation=None, train_test_ratio=8, validation_percentage=0.01, nb_samples=None):
-        """
-        Initialise RGBDObjectDataset_Contrast instance.
-
-        Parameters
-        ----------
-        path : str
-            Path too the dataset
-        mode : str
-            Dataset use: "train", "validation" or "test"
-        class_names : List[str], optional
-            Name of the class to load data from, by default None
-        modalities : list, optional
-            Modalities to load: "rgb", "depth", "mask", "loc", by default ["rgb"]
-        transformation : torchvision.transforms.Compose, optional
-            Transformation to apply to image modalities, by default DEFAULT_TRANSOFRMATION
-        augmentation_transformation : torchvision.transforms.Compose, optional
-            Transformation to apply to image modalities for data augmentation, by default None
-        train_test_ratio : int, optional
-            Ratio of train images over test images, by default 8
-        validation_percentage : float, optional
-            Percentage of validation data among training data, by default 0.01
-        nb_samples : int, optional
-            Maximum number of samples in the dataset, by default None
-        """
-        super().__init__(path, mode, class_names, modalities, transformation, train_test_ratio, validation_percentage, nb_samples)
-        self.augmentation_transformation = augmentation_transformation # or in training function
-
-    def __getitem__(self, p_idx):
-
-        # Load positive data 1
-        p_class = "_".join(self.x[p_idx].split("_")[:-3])
-        p_subclass = "_".join(self.x[p_idx].split("_")[:-2])
-        p_data_path = os.path.join(self.path,
-                                   p_class,
-                                   p_subclass,
-                                   self.x[p_idx])
-        p_data = self._load_item_data(p_idx, p_data_path)
-
-        # Apply augmentation transformation here or in training function...
-        
-        # Load negative data
-        n_idx = random.randint(0, len(self) - 1)
-        while self.x[n_idx].startswith(p_class):
-            n_idx = random.randint(0, len(self) - 1)
-        n_class = "_".join(self.x[n_idx].split("_")[:-3])
-        n_subclass = "_".join(self.x[n_idx].split("_")[:-2])
-        n_data_path = os.path.join(self.path,
-                                   n_class,
-                                   n_subclass,
-                                   self.x[n_idx])        
-        n_data = self._load_item_data(n_idx, n_data_path)
-
-        return [p_data, n_data]
+        return p_data_1, n_data

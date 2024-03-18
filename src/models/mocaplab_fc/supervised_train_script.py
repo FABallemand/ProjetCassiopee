@@ -6,14 +6,13 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
-import torchview
 
 sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee")
 from src.setup import setup_python, setup_pytorch
 from src import plot_results
-from src.dataset import RGBDObjectDataset
-from src.models.cnn import TestCNN, train, test
-
+from src.dataset import MocaplabDataset
+from mocaplab_fc import MocaplabFC
+from train import *
 
 if __name__=='__main__':
 
@@ -27,22 +26,19 @@ if __name__=='__main__':
     DEVICE = setup_pytorch()
 
     # Dataset parameters
-    INPUT_SIZE = (256,256)
-    TRANSFORMATION = transforms.Compose(
-        [transforms.ToTensor(),
-         transforms.Resize(size=INPUT_SIZE)])
+    
     NB_TRAIN_SAMPLES = None
     NB_VALIDATION_SAMPLES = None
     NB_TEST_SAMPLES = None
 
     # Training parameters
-    BATCH_SIZE = 8 # Batch size
+    BATCH_SIZE = 1 # Batch size
 
     LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
-    OPTIMIZER_TYPE = "SGD"                     # Type of optimizer
+    OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
 
-    EPOCHS = [1000]          # Number of epochs
-    LEARNING_RATES = [0.001] # Learning rates
+    EPOCHS = [32, 16, 8, 4]                     # Number of epochs
+    LEARNING_RATES = [0.1, 0.01, 0.001, 0.0001] # Learning rates
     
     EARLY_STOPPING = False # Early stopping flag
     PATIENCE = 10          # Early stopping patience
@@ -53,24 +49,21 @@ if __name__=='__main__':
     # Datasets
     print("#### Datasets ####")
 
-    train_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
-                                      mode="train",
-                                      transformation=TRANSFORMATION,
-                                      nb_samples=NB_TRAIN_SAMPLES)
+    dataset = MocaplabDataset(path="self_supervised_learning/dev/ProjetCassiopee/data/mocaplab/Cassiopée_Allbones",
+                              padding = True, 
+                              train_test_ratio = 8,
+                              validation_percentage = 0.01)
     
-    validation_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
-                                           mode="validation",
-                                           transformation=TRANSFORMATION,
-                                           nb_samples=NB_VALIDATION_SAMPLES)
+    print('#### Visualize data ####')
     
-    test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
-                                     mode="test",
-                                     transformation=TRANSFORMATION,
-                                     nb_samples=NB_TEST_SAMPLES)
+    # Split dataset
+    n = len(dataset)
+    diff = n - int(n*0.8) - 2*int(n*0.1)
+    train_dataset, validation_dataset, test_dataset = torch.utils.data.random_split(dataset, [int(n*0.8), int(n*0.1), int(n*0.1)+diff])
     
-    print(f"Train dataset -> {len(train_dataset.y)} samples")
-    print(f"Validation dataset -> {len(validation_dataset.y)} samples")
-    print(f"Test dataset -> {len(test_dataset.y)} samples")
+    #print(f"Train dataset -> {len(train_dataset.dataset.data)} samples")
+    #print(f"Test dataset -> {len(test_dataset.dataset.data)} samples")
+    #print(f"Validation dataset -> {len(validation_dataset.dataset.data)} samples")
     
     # Data loaders
     print("#### Data Loaders ####")
@@ -79,24 +72,23 @@ if __name__=='__main__':
                                    batch_size=BATCH_SIZE,
                                    shuffle=True)
     
-    validation_data_loader = DataLoader(validation_dataset,
-                                        batch_size=BATCH_SIZE,
-                                        shuffle=True)
-    
     test_data_loader = DataLoader(test_dataset,
                                   batch_size=BATCH_SIZE,
                                   shuffle=True)
     
+    validation_data_loader = DataLoader(validation_dataset,
+                                        batch_size=BATCH_SIZE,
+                                        shuffle=True)
+    
     # Create neural network
     print("#### Model ####")
-
-    model = TestCNN(nb_classes=len(train_dataset.class_dict)).to(DEVICE)
+    model = MocaplabFC(dataset.max_length*237).to(DEVICE)
 
     # Save training time start
     start_timestamp = datetime.now()
 
     # Create path for saving things...
-    model_path = f"train_results/supervised/cnn_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
+    model_path = f"models/model_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
 
     # Begin training
     print("#### Training ####")
@@ -121,20 +113,16 @@ if __name__=='__main__':
     # Test model
     test_acc, test_confusion_matrix = test(model, test_data_loader, DEVICE)
 
-    # Save model
-    torch.save(model.state_dict(), model_path)
-
     # Plot results
     plot_results(train_acc, train_loss,
                  val_acc, val_loss,
                  run_epochs, type(model).__name__, start_timestamp, DEVICE,
                  LOSS_FUNCTION, OPTIMIZER_TYPE,
                  EPOCHS, LEARNING_RATES, EARLY_STOPPING, PATIENCE, MIN_DELTA,
-                 test_acc, test_confusion_matrix, stop_timestamp, model_path + "_res")
+                 test_acc, test_confusion_matrix, stop_timestamp, model_path)
     
-    # Plot model architecture
-    graph = torchview.draw_graph(model, input_size=(BATCH_SIZE, 3, INPUT_SIZE[0], INPUT_SIZE[1]), device=DEVICE,
-                                 save_graph=True, filename=model_path.split("/")[1] + "_arc", directory=model_path.split("/")[0])
+    # Save model
+    torch.save(model.state_dict(), model_path)
     
     # End training
     print("#### End ####")

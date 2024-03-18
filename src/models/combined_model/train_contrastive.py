@@ -7,13 +7,18 @@ import sklearn
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
+import torch.nn.functional as TF
 
 from ...train import create_optimizer
 
    
 def contrastive_loss(encoded_x, encoded_x_same, encoded_x_diff):
-    dist_same = 1 - sklearn.metrics.pairwise.cosine_similarity(encoded_x, encoded_x_same)
-    dist_diff = 1 - sklearn.metrics.pairwise.cosine_similarity(encoded_x, encoded_x_diff)
+    #dist_same = 1 - sklearn.metrics.pairwise.cosine_similarity(encoded_x, encoded_x_same)
+    #dist_diff = 1 - sklearn.metrics.pairwise.cosine_similarity(encoded_x, encoded_x_diff)
+
+    dist_same = TF.mse_loss(encoded_x, encoded_x_same)
+    dist_diff = 1 - TF.mse_loss(encoded_x, encoded_x_diff)
+
     sum = dist_same - dist_diff
     return sum
 

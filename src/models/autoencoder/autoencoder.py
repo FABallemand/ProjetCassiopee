@@ -15,36 +15,39 @@ class TestAutoencoder(nn.Module) :
         # Encoder
         self.pool = nn.MaxPool2d(2, 2) # [(input_width - 2) / 2 + 1, (input_height - 2) / 2 + 1, input_depth]
 
-        self.conv1_1 = nn.Conv2d(3, 64, 3, 1, "same")    # Conv -> [128, 128, 64]
-        self.conv1_2 = nn.Conv2d(64, 64, 3, 1, "same")   # Conv -> [128, 128, 64]
+        self.conv1_1 = nn.Conv2d(3, 32, 7, 1, 3)    # Conv -> [128, 128, 64]
+        self.conv1_2 = nn.Conv2d(32, 32, 7, 1, 3)   # Conv -> [128, 128, 64]
                                                          # Pool -> [64, 64, 64]
-        self.conv2_1 = nn.Conv2d(64, 128, 3, 1, "same")  # Conv -> [64, 64, 128]
-        self.conv2_2 = nn.Conv2d(128, 128, 3, 1, "same") # Conv -> [64, 64, 128]
+        self.conv2_1 = nn.Conv2d(32, 64, 5, 1, 2)  # Conv -> [64, 64, 128]
+        self.conv2_2 = nn.Conv2d(64, 128, 5, 1, 2) # Conv -> [64, 64, 128]
                                                          # Pool -> [32, 32, 128]
-        self.conv3_1 = nn.Conv2d(128, 256, 3, 1, "same") # Conv -> [32, 32, 256]
-        self.conv3_2 = nn.Conv2d(256, 256, 3, 1, "same") # Conv -> [32, 32, 256]
+        self.conv3_1 = nn.Conv2d(128, 128, 3, 1, "same") # Conv -> [32, 32, 256]
+        self.conv3_2 = nn.Conv2d(128, 128, 3, 1, "same") # Conv -> [32, 32, 256]
                                                          # Pool -> [16, 16, 256]
-        self.conv4_1 = nn.Conv2d(256, 256, 3, 1, "same") # Conv -> [16, 16, 256]
-        self.conv4_2 = nn.Conv2d(256, 256, 3, 1, "same") # Conv -> [16, 16, 256]
+        self.conv4_1 = nn.Conv2d(128, 128, 3, 1, "same") # Conv -> [16, 16, 256]
+        self.conv4_2 = nn.Conv2d(128, 128, 3, 1, "same") # Conv -> [16, 16, 256]
                                                          # Pool -> [16, 8, 256]
-        self.fc = nn.Linear(8 * 8 * 256, 4096)           # FC   -> [self.nb_classes]
+        #self.fc_1 = nn.Linear(8 * 8 * 128, 512)           # FC   -> [self.nb_classes]
+        self.fc_1 = nn.Linear(32768, 512)
+        self.fc_2 = nn.Linear(512, 256)           # FC   -> [self.nb_classes]
+        self.fc_3 = nn.Linear(256, 32768)           # FC   -> [self.nb_classes]
         
         # Decoder
         self.upsample = nn.Upsample(scale_factor=2, mode="nearest") # https://pytorch.org/docs/stable/generated/torch.nn.Upsample.html
 
-        self.tconv1_1 = nn.Conv2d(256, 256, 3, 1, "same") # T Conv -> [8, 8, 256]
-        self.tconv1_2 = nn.Conv2d(256, 256, 3, 1, "same") # T Conv -> [8, 8, 256]
+        self.tconv1_1 = nn.Conv2d(128, 128, 3, 1, "same") # T Conv -> [8, 8, 256]
+        self.tconv1_2 = nn.Conv2d(128, 128, 3, 1, "same") # T Conv -> [8, 8, 256]
                                                           # Upsamp -> [16, 16, 256]
-        self.tconv2_1 = nn.Conv2d(256, 64, 3, 1, "same")  # T Conv -> [16, 16, 64]
-        self.tconv2_2 = nn.Conv2d(64, 64, 3, 1, "same")   # T Conv -> [16, 16, 64]
+        self.tconv2_1 = nn.Conv2d(128, 128, 3, 1, "same")  # T Conv -> [16, 16, 64]
+        self.tconv2_2 = nn.Conv2d(128, 128, 3, 1, "same")   # T Conv -> [16, 16, 64]
                                                           # Upsamp -> [32, 32, 64]
-        self.tconv3_1 = nn.Conv2d(64, 32, 3, 1, "same")   # T Conv -> [32, 32, 32]
-        self.tconv3_2 = nn.Conv2d(32, 32, 3, 1, "same")   # T Conv -> [32, 32, 32]
+        self.tconv3_1 = nn.Conv2d(128, 64, 5, 1, 2)   # T Conv -> [32, 32, 32]
+        self.tconv3_2 = nn.Conv2d(64, 32, 5, 1, 2)   # T Conv -> [32, 32, 32]
                                                           # Upsamp -> [64, 64, 32]
-        self.tconv4_1 = nn.Conv2d(32, 32, 3, 1, "same")   # T Conv -> [64, 64, 32]
-        self.tconv4_2 = nn.Conv2d(32, 32, 3, 1, "same")   # T Conv -> [64, 64, 32]
+        self.tconv4_1 = nn.Conv2d(32, 32, 7, 1, 3)   # T Conv -> [64, 64, 32]
+        self.tconv4_2 = nn.Conv2d(32, 3, 7, 1, 3)   # T Conv -> [64, 64, 32]
                                                           # Upsamp -> [128, 128, 32]
-        self.tconv5_1 = nn.Conv2d(32, 3, 3, 1, "same")    # T Conv -> [128, 128, 3]
+        #self.tconv5_1 = nn.Conv2d(32, 3, 3, 1, "same")    # T Conv -> [128, 128, 3]
 
         # Batch normalisation
         self.batchnorm32 = nn.BatchNorm2d(32)
@@ -61,8 +64,8 @@ class TestAutoencoder(nn.Module) :
         # print("Pool 1")
         x = self.pool(x)
 
-        # print("Batch Norm 64")
-        x = self.batchnorm64(x)
+        # print("Batch Norm 32")
+        x = self.batchnorm32(x)
 
         # print("Conv 2")
         x = F.relu(self.conv2_1(x))
@@ -81,8 +84,8 @@ class TestAutoencoder(nn.Module) :
         # print("Pool 3")
         x = self.pool(x)
 
-        # print("Batch Norm 256")
-        x = self.batchnorm256(x)
+        # print("Batch Norm 128")
+        x = self.batchnorm128(x)
 
         # print("Conv 4")
         x = F.relu(self.conv4_1(x))
@@ -91,19 +94,23 @@ class TestAutoencoder(nn.Module) :
         # print("Pool 4")
         x = self.pool(x)
 
-        # print("Batch Norm 256")
-        x = self.batchnorm256(x)
+        # print("Batch Norm 128")
+        x = self.batchnorm128(x)
 
         # print("Flatten")
         x = torch.flatten(x, 1)
 
         # print("Fully Connected")
-        encoded = F.relu(self.fc(x))
+        x = F.relu(self.fc_1(x))
+        x = F.relu(self.fc_2(x))
+        encoded = x
+        x = F.relu(self.fc_3(x))
 
         # Decoder
         # print("Reshape")
-        x = torch.reshape(encoded, (-1, 256, 4, 4))
-        
+        #x = torch.reshape(encoded, (-1, 256, 4, 4))
+        x = torch.reshape(x, (-1, 128, 16, 16))
+
         # print("Upsample 1")
         x = self.upsample(x)
 
@@ -115,7 +122,7 @@ class TestAutoencoder(nn.Module) :
         x = self.upsample(x)
 
         # print("Batch Norm 256")
-        x = self.batchnorm256(x)
+        x = self.batchnorm128(x)
 
         # print("Trans Conv 2")
         x = F.relu(self.tconv2_1(x))
@@ -125,14 +132,14 @@ class TestAutoencoder(nn.Module) :
         x = self.upsample(x)
 
         # print("Batch Norm 64")
-        x = self.batchnorm64(x)
+        x = self.batchnorm128(x)
 
         # print("Trans Conv 3")
         x = F.relu(self.tconv3_1(x))
         x = F.relu(self.tconv3_2(x))
 
         # print("Upsample 4")
-        x = self.upsample(x)
+        #x = self.upsample(x)
 
         # print("Batch Norm 32")
         x = self.batchnorm32(x)
@@ -145,6 +152,7 @@ class TestAutoencoder(nn.Module) :
         x = self.upsample(x)
 
         # print("Trans Conv 5")
-        decoded = F.relu(self.tconv5_1(x))
+        #decoded = F.relu(self.tconv5_1(x))
+        decoded = F.relu(x)
 
         return encoded, decoded

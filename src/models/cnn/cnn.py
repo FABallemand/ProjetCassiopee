@@ -14,17 +14,17 @@ class TestCNN(nn.Module):
 
         self.pool = nn.MaxPool2d(2, 2) # [(input_width - 2) / 2 + 1, (input_height - 2) / 2 + 1, input_depth]
 
-        self.conv1_1 = nn.Conv2d(3, 64, 3, 1, "same")    # Convolution     -> [128, 128, 64]
-        self.conv1_2 = nn.Conv2d(64, 64, 3, 1, "same")   # Convolution     -> [128, 128, 64]
+        self.conv1_1 = nn.Conv2d(3, 32, 3, 1, "same")    # Convolution     -> [128, 128, 64]
+        self.conv1_2 = nn.Conv2d(32, 32, 3, 1, "same")   # Convolution     -> [128, 128, 64]
                                                          # Pooling         -> [64, 64, 64]
-        self.conv2_1 = nn.Conv2d(64, 128, 3, 1, "same")  # Convolution     -> [64, 64, 128]
-        self.conv2_2 = nn.Conv2d(128, 128, 3, 1, "same") # Convolution     -> [64, 64, 128]
+        self.conv2_1 = nn.Conv2d(32, 64, 3, 1, "same")  # Convolution     -> [64, 64, 128]
+        self.conv2_2 = nn.Conv2d(64, 64, 3, 1, "same") # Convolution     -> [64, 64, 128]
                                                          # Pooling         -> [32, 32, 128]
-        self.conv3_1 = nn.Conv2d(128, 256, 3, 1, "same") # Convolution     -> [32, 32, 256]
-        self.conv3_2 = nn.Conv2d(256, 256, 3, 1, "same") # Convolution     -> [32, 32, 256]
-        self.conv3_3 = nn.Conv2d(256, 256, 3, 1, "same") # Convolution     -> [32, 32, 256]
+        self.conv3_1 = nn.Conv2d(64, 128, 3, 1, "same") # Convolution     -> [32, 32, 256]
+        self.conv3_2 = nn.Conv2d(128, 128, 3, 1, "same") # Convolution     -> [32, 32, 256]
+        self.conv3_3 = nn.Conv2d(128, 256, 3, 1, "same") # Convolution     -> [32, 32, 256]
                                                          # Pooling         -> [16, 16, 256]
-        self.fc1 = nn.Linear(16 * 16 * 256, 1024)        # Fully connected -> [1024]
+        self.fc1 = nn.Linear('', 1024)        # Fully connected -> [1024]
         self.fc2 = nn.Linear(1024, 512)                  # Fully connected -> [512]
         self.fc3 = nn.Linear(512, self.nb_classes)       # Fully connected -> [self.nb_classes]
 
@@ -54,6 +54,7 @@ class TestCNN(nn.Module):
 
         # print("Flatten")
         x = torch.flatten(x, 1)
+        # print(x.shape)
 
         # print("Fully Connected 1")
         x = F.relu(self.fc1(x))

@@ -3,6 +3,8 @@ import random
 import pandas as pd
 import csv
 from torch.utils.data import Dataset
+import numpy as np
+import torch
 
 class MocaplabDataset(Dataset):
     """
@@ -34,6 +36,21 @@ class MocaplabDataset(Dataset):
             x_and_y = x_and_y[:nb_samples]
             self.x = [x for x,y in x_and_y]
             self.y = [y for x,y in x_and_y]
+    
+    def read_csv(self, csv_file) :
+        data = []
+        with open(csv_file, 'r') as file:
+            csv_reader = csv.reader(file, delimiter=';')
+            n=0
+            for line in csv_reader :
+                if n>=2 :
+                    values = line[2:]
+                    for i in range(len(values)) :
+                        values[i] = float(values[i])
+                    data.append(values)
+                n+=1
+        data = np.stack(data)
+        return data
 
     def __len__(self):
         return len(self.y)
@@ -60,23 +77,31 @@ class MocaplabDataset(Dataset):
                 self.y.append(self.class_dict[label])
 
                 # Retrieve max length
-                data = pd.read_csv(os.path.join(self.path, filename), sep=";", header=[0,1])
-                length = data.shape[0]
+                data = self.read_csv(os.path.join(self.path, filename))
+                length = len(data)
                 if length > self.max_length:
                     self.max_length = length
 
     def __getitem__(self, idx):
         data_path = os.path.join(self.path, self.x[idx])
 
-        data = pd.read_csv(data_path, sep=";", header=[0,1])
+        data = self.read_csv(data_path)
         label = self.y[idx]
+        label = [0, 1] if label==1 else [1, 0]
+        label = np.stack(label)                 # format incorrect
 
         if self.padding:
-            nb_padding_rows = self.max_length - data.shape[0]
+            data = data.tolist()
+            for _ in range(self.max_length-len(data)) :
+                data.append([0.0 for _ in range(237)])
+            data = np.stack(data)
+
+            '''nb_padding_rows = self.max_length - data.shape[0]
             empty_rows = {c: [0 for _ in range(nb_padding_rows)] for c in data.columns}
             empty_data = pd.DataFrame(empty_rows)
             data = pd.concat([data, empty_data], ignore_index=True)
-            data = data.to_numpy()
+            data = data.to_numpy()'''
+        
         return data, label
     
     # def _add_empty_cell(csv_file, row_index, col_index):
@@ -97,3 +122,31 @@ class MocaplabDataset(Dataset):
     #             # print("Index de colonne non valide.")
     #     # else:
     #         # print("Index de ligne non valide.")
+
+    
+def read_csv(csv_file) :
+    data = []
+    with open(csv_file, 'r') as file:
+        csv_reader = csv.reader(file, delimiter=';')
+        n=0
+        for line in csv_reader :
+            if n>=2 :
+                values = line[2:]
+                for i in range(len(values)) :
+                    values[i] = float(values[i])
+                data.append(values)
+            n+=1
+    result = np.stack(data)
+    return result
+
+def main():
+    """ Main program """
+    data = read_csv("self_supervised_learning/dev/ProjetCassiopee/data/mocaplab/Cassiopée_Allbones/Ville.csv")
+    data = data.tolist()
+    for _ in range(86-len(data)) :
+        data.append([0.0 for _ in range(237)])
+    data = np.stack(data)
+    print(data.shape)
+
+if __name__ == "__main__":
+    main()
