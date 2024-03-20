@@ -2,6 +2,7 @@ import os
 # import subprocess
 
 from src.models.cnn import rgbd_object_cnn_supervised_training
+from src.models.combined_model import rgbd_object_combined_supervised_training, rgbd_object_combined_supervised_contrastive_training
 
 # Run with: nohup python3 main.py &
 

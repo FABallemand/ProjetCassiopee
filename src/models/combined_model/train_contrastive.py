@@ -1,20 +1,17 @@
-import random
-from copy import deepcopy
-import itertools
 import torch
-import numpy as np
-import sklearn
-from sklearn.metrics import confusion_matrix
-import seaborn as sns
-import matplotlib.pyplot as plt
 import torch.nn.functional as TF
+from sklearn.metrics import confusion_matrix
+from sklearn.manifold import TSNE
+
+import matplotlib.pyplot as plt
 
 from ...train import create_optimizer
 
    
 def contrastive_loss(encoded_x, encoded_x_same, encoded_x_diff):
-    #dist_same = 1 - sklearn.metrics.pairwise.cosine_similarity(encoded_x, encoded_x_same)
-    #dist_diff = 1 - sklearn.metrics.pairwise.cosine_similarity(encoded_x, encoded_x_diff)
+    # https://pytorch.org/docs/stable/generated/torch.nn.functional.cosine_similarity.html
+    # dist_same = 1 - TF.cosine_similarity()(encoded_x, encoded_x_same)
+    # dist_diff = 1 - TF.cosine_similarity()(encoded_x, encoded_x_diff)
 
     dist_same = TF.mse_loss(encoded_x, encoded_x_same)
     dist_diff = 1 - TF.mse_loss(encoded_x, encoded_x_diff)
@@ -243,7 +240,7 @@ def train(
     return train_accuracies, train_losses, validation_accuracies, validation_losses, run_epochs
 
 
-def test(model, test_data_loader, device):
+def test(model, test_data_loader, tsne_path=None, device=torch.device("cpu")):
     # Accuracy variables
     correct = 0
     total = 0
@@ -251,6 +248,10 @@ def test(model, test_data_loader, device):
     # Confusion matrix variables
     all_label = None
     all_predicted = None
+
+    # TSNE variable
+    encoded_features = []
+    labels = []
 
     with torch.no_grad():
         for i, batch in enumerate(test_data_loader):
@@ -297,11 +298,48 @@ def test(model, test_data_loader, device):
             else:
                 all_label = torch.cat((all_label, p_label_1))
                 all_predicted = torch.cat((all_predicted, predicted))
+
+            # Save encoded features and labels
+            encoded_features.append(p_encoded_x_1)
+            labels.append(p_label_1)
+            encoded_features.append(p_encoded_x_2)
+            labels.append(p_label_2)
+            encoded_features.append(n_encoded_x)
+            labels.append(n_label)
+
+    # Compute batch size
+    batch_size = p_rgb_1.shape[0]
+
+    # Compute number of samples
+    nb_samples = 3 * (i + 1) * batch_size
             
     # Compute test accuracy
     test_accuracy = correct / total
 
     # Create "confusion matrix"
     test_confusion_matrix = confusion_matrix(all_label.cpu(), all_predicted.cpu())
+
+    # TSNE
+    if tsne_path is not None:
+        # Process inference results
+        encoded_features_arr = torch.empty(size=(nb_samples, 256))
+        for i, batch in enumerate(encoded_features):
+            encoded_features_arr[i * batch_size:(i + 1) * batch_size,:] = batch
+        labels_arr = torch.empty(size=(nb_samples,))
+        for i, batch in enumerate(labels):
+            labels_arr[i * batch_size:(i + 1) * batch_size] = batch
+
+        # Apply TSNE
+        tsne = TSNE(n_components=2,
+                    perplexity=30,
+                    n_iter=1000,
+                    init="pca",
+                    random_state=42)
+        tsne_results = tsne.fit_transform(encoded_features_arr)
+
+        # Save TSNE plot
+        fig, ax = plt.subplots(figsize=(10, 10))
+        ax.scatter(tsne_results[:,0], tsne_results[:,1], c=labels_arr, s=50, alpha=0.8)
+        plt.savefig(tsne_path)
 
     return test_accuracy, test_confusion_matrix

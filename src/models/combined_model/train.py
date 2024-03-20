@@ -1,5 +1,8 @@
 import torch
 from sklearn.metrics import confusion_matrix
+from sklearn.manifold import TSNE
+
+import matplotlib.pyplot as plt
 
 from ...train import create_optimizer
 
@@ -180,7 +183,7 @@ def train(
     return train_accuracies, train_losses, validation_accuracies, validation_losses, run_epochs
 
 
-def test(model, test_data_loader, device=torch.device("cpu")):
+def test(model, test_data_loader, tsne_path=None, device=torch.device("cpu")):
     # Accuracy variables
     correct = 0
     total = 0
@@ -189,6 +192,11 @@ def test(model, test_data_loader, device=torch.device("cpu")):
     all_label = None
     all_predicted = None
 
+    # TSNE variable
+    encoded_features = []
+    labels = []
+
+    # Run inference
     with torch.no_grad():
         for i, batch in enumerate(test_data_loader):
             
@@ -216,11 +224,44 @@ def test(model, test_data_loader, device=torch.device("cpu")):
             else:
                 all_label = torch.cat((all_label, label))
                 all_predicted = torch.cat((all_predicted, predicted))
+
+            # Save encoded features and labels
+            encoded_features.append(encoded_x)
+            labels.append(label)
+
+    # Compute batch size
+    batch_size = rgb.shape[0]
+
+    # Compute number of samples
+    nb_samples = (i + 1) * batch_size
             
     # Compute test accuracy
     test_accuracy = correct / total
 
     # Create "confusion matrix"
     test_confusion_matrix = confusion_matrix(all_label.cpu(), all_predicted.cpu())
+
+    # TSNE
+    if tsne_path is not None:
+        # Process inference results
+        encoded_features_arr = torch.empty(size=(nb_samples, 256))
+        for i, batch in enumerate(encoded_features):
+            encoded_features_arr[i * batch_size:(i + 1) * batch_size,:] = batch
+        labels_arr = torch.empty(size=(nb_samples,))
+        for i, batch in enumerate(labels):
+            labels_arr[i * batch_size:(i + 1) * batch_size] = batch
+
+        # Apply TSNE
+        tsne = TSNE(n_components=2,
+                    perplexity=30,
+                    n_iter=1000,
+                    init="pca",
+                    random_state=42)
+        tsne_results = tsne.fit_transform(encoded_features_arr)
+
+        # Save TSNE plot
+        fig, ax = plt.subplots(figsize=(10, 10))
+        ax.scatter(tsne_results[:,0], tsne_results[:,1], c=labels_arr, s=50, alpha=0.8)
+        plt.savefig(tsne_path)
 
     return test_accuracy, test_confusion_matrix
