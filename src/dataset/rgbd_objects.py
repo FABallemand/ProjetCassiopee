@@ -236,7 +236,7 @@ class RGBDObjectDataset_Supervised_Contrast(RGBDObjectDataset):
 
     def __init__(self, path, mode, class_names=None, modalities=["rgb"],
                  transformation=DEFAULT_TRANSOFRMATION, crop_transformation=None,
-                 train_test_ratio=8, validation_percentage=0.01, nb_samples=None):
+                 train_percentage=0.6, validation_percentage=0.2, test_percentage=0.2, nb_max_samples=None):
         """
         Initialise RGBDObjectDataset_Contrast instance.
 
@@ -254,14 +254,16 @@ class RGBDObjectDataset_Supervised_Contrast(RGBDObjectDataset):
             Transformation to apply to image modalities, by default DEFAULT_TRANSOFRMATION
         crop_transformation : torchvision.transforms.Compose, optional
             Additional custom crop transformation to apply to image modalities, by default None
-        train_test_ratio : int, optional
-            Ratio of train images over test images, by default 8
+        train_percentage : float, optional
+            Percentage of training images , by default 0.6
         validation_percentage : float, optional
-            Percentage of validation data among training data, by default 0.01
-        nb_samples : int, optional
+            Percentage of validation images , by default 0.2
+        test_percentage : float, optional
+            Percentage of test images , by default 0.2
+        nb_max_samples : int, optional
             Maximum number of samples in the dataset, by default None
         """
-        super().__init__(path, mode, class_names, modalities, transformation, crop_transformation, train_test_ratio, validation_percentage, nb_samples)
+        super().__init__(path, mode, class_names, modalities, transformation, crop_transformation, train_percentage, validation_percentage, test_percentage, nb_max_samples)
 
     def __getitem__(self, p_idx_1):
 
@@ -310,7 +312,7 @@ class RGBDObjectDataset_Unsupervised_Contrast(RGBDObjectDataset):
 
     def __init__(self, path, mode, class_names=None, modalities=["rgb"],
                  transformation=DEFAULT_TRANSOFRMATION, crop_transformation=None,
-                 train_test_ratio=8, validation_percentage=0.01, nb_samples=None):
+                 train_percentage=0.6, validation_percentage=0.2, test_percentage=0.2, nb_max_samples=None):
         """
         Initialise RGBDObjectDataset_Contrast instance.
 
@@ -328,14 +330,16 @@ class RGBDObjectDataset_Unsupervised_Contrast(RGBDObjectDataset):
             Transformation to apply to image modalities, by default DEFAULT_TRANSOFRMATION
         crop_transformation : torchvision.transforms.Compose, optional
             Additional custom crop transformation to apply to image modalities, by default None
-        train_test_ratio : int, optional
-            Ratio of train images over test images, by default 8
+        train_percentage : float, optional
+            Percentage of training images , by default 0.6
         validation_percentage : float, optional
-            Percentage of validation data among training data, by default 0.01
-        nb_samples : int, optional
+            Percentage of validation images , by default 0.2
+        test_percentage : float, optional
+            Percentage of test images , by default 0.2
+        nb_max_samples : int, optional
             Maximum number of samples in the dataset, by default None
         """
-        super().__init__(path, mode, class_names, modalities, transformation, crop_transformation, train_test_ratio, validation_percentage, nb_samples)
+        super().__init__(path, mode, class_names, modalities, transformation, crop_transformation, train_percentage, validation_percentage, test_percentage, nb_max_samples)
 
     def __getitem__(self, p_idx):
 
