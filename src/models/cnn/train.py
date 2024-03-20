@@ -145,10 +145,6 @@ def train(
 
         for epoch in range(epochs):
             print(f"#### EPOCH {epoch} ####")
-
-            # Log by writting in file
-            with open('test.log', 'a') as f:
-                f.write(f"#### EPOCH {epoch} ####")
             
             # Train for one epoch
             if debug:
@@ -168,11 +164,6 @@ def train(
 
             print(f"Train:      accuracy={train_accuracy:.8f} | loss={train_loss:.8f}")
             print(f"Validation: accuracy={validation_accuracy:.8f} | loss={validation_loss:.8f}")
-
-            # Log by writting in file
-            with open('test.log', 'a') as f:
-                f.write(f"Train:      accuracy={train_accuracy:.8f} | loss={train_loss:.8f}")
-                f.write(f"Validation: accuracy={validation_accuracy:.8f} | loss={validation_loss:.8f}")
 
             # Early stopping
             if early_stopping:

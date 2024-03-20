@@ -56,9 +56,9 @@ class RandomCrop(object):
             Cropped RGB, depth and mask modalities with position of the object in the cropped image
         """
 
-        # Check input shapes
-        assert rgb.shape == depth.shape
-        assert rgb.shape == mask.shape
+        # Check inputs and inputs shapes
+        assert loc_x != -1 # See RGBDObjectDataset
+        assert loc_y != -1 # See RGBDObjectDataset
 
         # Retrieve input shape
         _, input_height, input_width = rgb.shape
@@ -108,11 +108,14 @@ class ObjectCrop(object):
         assert isinstance(output_size, (int, tuple)) or output_size is None
         if output_size is None:
             self.output_size = None
+            self.resize = None
         elif isinstance(output_size, int):
             self.output_size = (output_size, output_size)
+            self.resize = transforms.Resize(size=self.output_size)
         else:
             assert len(output_size) == 2
             self.output_size = output_size
+            self.resize = transforms.Resize(size=self.output_size)
 
         # Padding
         assert isinstance(padding, (int, tuple))
@@ -153,9 +156,8 @@ class ObjectCrop(object):
             Cropped RGB, depth and mask modalities with position of the object in the cropped image
         """
 
-        # Check input shapes
-        assert rgb.shape == depth.shape
-        assert rgb.shape == mask.shape
+        # Check inputs and inputs shapes
+        assert isinstance(mask, torch.Tensor)
 
         # Retrieve input shape
         _, input_height, input_width = rgb.shape
@@ -168,10 +170,10 @@ class ObjectCrop(object):
         max_y = torch.max(mask_coord[:,0])
 
         # Add padding
-        min_x -= self.padding[0]
-        max_x += self.padding[0]
-        min_y -= self.padding[1]
-        max_y += self.padding[1]
+        min_x -= max(0, self.padding[0])
+        max_x += min(input_width, self.padding[0])
+        min_y -= max(0, self.padding[1])
+        max_y += min(input_height, self.padding[1])
 
         # Compute crop width and height
         crop_width = max_x - min_x
@@ -199,10 +201,13 @@ class ObjectCrop(object):
         if not isinstance(mask, int):
             mask = transforms.functional.crop(mask, y, x, crop_height, crop_width)
 
+        # Resize image
         if self.output_size is not None:
-            resize = transforms.Resize(size=self.output_size)
-            rgb = resize(rgb)
-            depth = resize(depth)
-            mask = resize(mask)
+            if not isinstance(rgb, int):
+                rgb = self.resize(rgb)
+            if not isinstance(depth, int):
+                depth = self.resize(depth)
+            if not isinstance(mask, int):
+                mask = self.resize(mask)
 
         return rgb, depth, mask, max(0, -offset_x), max(0, -offset_y)

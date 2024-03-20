@@ -8,14 +8,15 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 import torchview
 
-sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee")
-from src.setup import setup_python, setup_pytorch
-from src import plot_results
-from src.dataset import RGBDObjectDataset
-from src.models.cnn import TestCNN, train, test
+from ...setup import setup_python, setup_pytorch
+from ...train import plot_results
+from ...transformation import RandomCrop, ObjectCrop
+from ...dataset import RGBDObjectDataset
+from .cnn import TestCNN
+from .train import train, test
 
 
-if __name__=='__main__':
+def rgbd_object_cnn_supervised_training():
 
     # Begin set-up
     print("#### Set-Up ####")
@@ -28,20 +29,21 @@ if __name__=='__main__':
 
     # Dataset parameters
     INPUT_SIZE = (256,256)
-    TRANSFORMATION = transforms.Compose(
-        [transforms.ToTensor(),
-         transforms.Resize(size=INPUT_SIZE)])
+    TRANSFORMATION = None
+    CROP_TRANSFORMATION = ObjectCrop(output_size=INPUT_SIZE,
+                                     padding=(20,20),
+                                     offset_range=(-10,10))
     NB_TRAIN_SAMPLES = None
     NB_VALIDATION_SAMPLES = None
     NB_TEST_SAMPLES = None
 
     # Training parameters
-    BATCH_SIZE = 8 # Batch size
+    BATCH_SIZE = 64 # Batch size
 
     LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
-    OPTIMIZER_TYPE = "SGD"                     # Type of optimizer
+    OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
 
-    EPOCHS = [1000]          # Number of epochs
+    EPOCHS = [1]          # Number of epochs
     LEARNING_RATES = [0.001] # Learning rates
     
     EARLY_STOPPING = False # Early stopping flag
@@ -52,37 +54,49 @@ if __name__=='__main__':
     
     # Datasets
     print("#### Datasets ####")
-
+    
+    print("## Train Dataset ##")
     train_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
                                       mode="train",
+                                      modalities=["rgb"],
                                       transformation=TRANSFORMATION,
+                                      crop_transformation=CROP_TRANSFORMATION,
                                       nb_samples=NB_TRAIN_SAMPLES)
     
+    print("## Validation Dataset ##")
     validation_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
                                            mode="validation",
+                                           modalities=["rgb"],
                                            transformation=TRANSFORMATION,
+                                           crop_transformation=CROP_TRANSFORMATION,
                                            nb_samples=NB_VALIDATION_SAMPLES)
     
+    print("## Test Dataset ##")
     test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
                                      mode="test",
+                                     modalities=["rgb"],
                                      transformation=TRANSFORMATION,
+                                     crop_transformation=CROP_TRANSFORMATION,
                                      nb_samples=NB_TEST_SAMPLES)
     
-    print(f"Train dataset -> {len(train_dataset.y)} samples")
-    print(f"Validation dataset -> {len(validation_dataset.y)} samples")
-    print(f"Test dataset -> {len(test_dataset.y)} samples")
+    print(f"Train dataset -> {len(train_dataset)} samples")
+    print(f"Validation dataset -> {len(validation_dataset)} samples")
+    print(f"Test dataset -> {len(test_dataset)} samples")
     
     # Data loaders
     print("#### Data Loaders ####")
 
+    print("## Train Data Loader ##")
     train_data_loader = DataLoader(train_dataset,
                                    batch_size=BATCH_SIZE,
                                    shuffle=True)
     
+    print("## Validation Data Loader ##")
     validation_data_loader = DataLoader(validation_dataset,
                                         batch_size=BATCH_SIZE,
                                         shuffle=True)
     
+    print("## Test Data Loader ##")
     test_data_loader = DataLoader(test_dataset,
                                   batch_size=BATCH_SIZE,
                                   shuffle=True)
@@ -96,7 +110,8 @@ if __name__=='__main__':
     start_timestamp = datetime.now()
 
     # Create path for saving things...
-    model_path = f"train_results/supervised/cnn_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
+    results_dir = f"train_results/supervised"
+    results_file = f"rgbd_object_cnn_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
 
     # Begin training
     print("#### Training ####")
@@ -122,7 +137,7 @@ if __name__=='__main__':
     test_acc, test_confusion_matrix = test(model, test_data_loader, DEVICE)
 
     # Save model
-    torch.save(model.state_dict(), model_path)
+    torch.save(model.state_dict(), os.path.join(results_dir, results_file))
 
     # Plot results
     plot_results(train_acc, train_loss,
@@ -130,11 +145,11 @@ if __name__=='__main__':
                  run_epochs, type(model).__name__, start_timestamp, DEVICE,
                  LOSS_FUNCTION, OPTIMIZER_TYPE,
                  EPOCHS, LEARNING_RATES, EARLY_STOPPING, PATIENCE, MIN_DELTA,
-                 test_acc, test_confusion_matrix, stop_timestamp, model_path + "_res")
+                 test_acc, test_confusion_matrix, stop_timestamp, os.path.join(results_dir, results_file + "_res"))
     
     # Plot model architecture
     graph = torchview.draw_graph(model, input_size=(BATCH_SIZE, 3, INPUT_SIZE[0], INPUT_SIZE[1]), device=DEVICE,
-                                 save_graph=True, filename=model_path.split("/")[1] + "_arc", directory=model_path.split("/")[0])
+                                 save_graph=True, filename=results_file + "_arc", directory=results_dir)
     
     # End training
     print("#### End ####")

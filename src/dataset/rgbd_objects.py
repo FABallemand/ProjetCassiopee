@@ -1,10 +1,12 @@
 import os
-import logging
 import random
 import cv2
 import torch
 import torchvision
 from torch.utils.data import Dataset
+
+from ..transformation.custom_crop import RandomCrop, ObjectCrop
+
 
 DEFAULT_TRANSOFRMATION = torchvision.transforms.Compose([torchvision.transforms.ToTensor()])
 
@@ -17,7 +19,7 @@ class RGBDObjectDataset(Dataset):
 
     def __init__(self, path, mode, class_names=None, modalities=["rgb"],
                  transformation=DEFAULT_TRANSOFRMATION, crop_transformation=None,
-                 train_test_ratio=8, validation_percentage=0.01, nb_samples=None):
+                 train_percentage=0.6, validation_percentage=0.2, test_percentage=0.2, nb_max_samples=None):
         """
         Initialise RGBDObjectDataset instance.
 
@@ -35,11 +37,13 @@ class RGBDObjectDataset(Dataset):
             Transformation to apply to image modalities, by default DEFAULT_TRANSOFRMATION
         crop_transformation : torchvision.transforms.Compose, optional
             Additional custom crop transformation to apply to image modalities, by default None
-        train_test_ratio : int, optional
-            Ratio of train images over test images, by default 8
+        train_percentage : float, optional
+            Percentage of training images , by default 0.6
         validation_percentage : float, optional
-            Percentage of validation data among training data, by default 0.01
-        nb_samples : int, optional
+            Percentage of validation images , by default 0.2
+        test_percentage : float, optional
+            Percentage of test images , by default 0.2
+        nb_max_samples : int, optional
             Maximum number of samples in the dataset, by default None
         """
         super().__init__()
@@ -48,13 +52,21 @@ class RGBDObjectDataset(Dataset):
         self.mode = mode
         self.modalities = modalities
         self.class_names = class_names
+
         self.transformation = transformation
         if self.transformation is None:
             self.transformation = DEFAULT_TRANSOFRMATION
         self.crop_transformation = crop_transformation
-        self.train_test_ratio = train_test_ratio
+
+        self.train_percentage = train_percentage
         self.validation_percentage = validation_percentage
-        self.nb_samples = nb_samples
+        self.test_percentage = test_percentage
+        self.nb_max_samples = nb_max_samples
+
+        self.rgb_flag = "rgb" in self.modalities
+        self.depth_flag = "depth" in self.modalities
+        self.mask_flag = "mask" in self.modalities or isinstance(self.crop_transformation, ObjectCrop)
+        self.loc_flag = "loc" in self.modalities or isinstance(self.crop_transformation, RandomCrop)
 
         self.class_dict = None
 
@@ -65,13 +77,8 @@ class RGBDObjectDataset(Dataset):
         self._create_labels_dict()
         self._load_data()
 
-        if nb_samples is not None:
-            # Shuffle data in order to have multiple classes
-            x_and_y = list(zip(self.x, self.y))
-            random.shuffle(x_and_y)
-            x_and_y = x_and_y[:nb_samples]
-            self.x = [x for x,y in x_and_y]
-            self.y = [y for x,y in x_and_y]
+    def __str__(self):
+        return f"RGBDObjectDataset -> path={self.path} | mode={self.mode}"
 
     def __len__(self):
         return len(self.y)
@@ -94,95 +101,121 @@ class RGBDObjectDataset(Dataset):
                 continue
 
             # Iterate over sub-classes (eg: apple_1)
-            for sc in os.listdir(os.path.join(self.path, c)):
-                data = [f[:-4] for f in os.listdir(os.path.join(self.path, c, sc)) if not any(d in f for d in disc)]
-                data = sorted(data)
+            for sc in [f for f in os.listdir(os.path.join(self.path, c)) if os.path.isdir(os.path.join(self.path, c, f))]:
+                sc_path = os.path.join(self.path, c, sc)
+                data = [f[:-4] for f in os.listdir(os.path.join(self.path, c, sc)) if os.path.isfile(os.path.join(sc_path, f)) and not any(d in f for d in disc)]
 
                 # Remove samples with missing data
                 all_files = [f[:-4] for f in os.listdir(os.path.join(self.path, c, sc))]
-                if "depth" in self.modalities:
+                if self.depth_flag:
                     for sample in data:
                         if (sample + "_depth") not in all_files:
-                            logging.warning(f"Missing depth data for {sample}")
-                            data.remove(sample)
+                            print(f"Missing depth data for {sample}")
+                            # data.remove(sample)
+                            data = list(filter(lambda s: s != sample, data))
                             self.removed.append(sample)
-                if "mask" in self.modalities:
+                if self.mask_flag:
                     for sample in data:
                         if (sample + "_mask") not in all_files:
-                            logging.warning(f"Missing mask data for {sample}")
-                            data.remove(sample)
+                            print(f"Missing mask data for {sample}")
+                            # data.remove(sample)
+                            data = list(filter(lambda s: s != sample, data))
                             self.removed.append(sample)
-                if "loc" in self.modalities:
+                if self.loc_flag:
                     for sample in data:
                         if (sample + "_loc") not in all_files:
-                            logging.warning(f"Missing localisation data for {sample}")
-                            data.remove(sample)
+                            print(f"Missing localisation data for {sample}")
+                            # data.remove(sample)
+                            data = list(filter(lambda s: s != sample, data))
                             self.removed.append(sample)
-                
-                nb_new = 0
-                if self.mode == "train":
-                    new = [sample for sample in data if int(sample.split("_")[-1]) % self.train_test_ratio != 0]
-                    new = sorted(new)
-                    nb_new = int((1 - self.validation_percentage) * len(new))
-                    self.x += new[:nb_new]
-                elif self.mode == "validation":
-                    new = [sample for sample in data if int(sample.split("_")[-1]) % self.train_test_ratio != 0]
-                    new = sorted(new)
-                    nb_new_train = int((1 - self.validation_percentage) * len(new))
-                    nb_new = len(new) - nb_new_train
-                    self.x += new[nb_new_train:]
-                elif self.mode == "test":
-                    new = [sample for sample in data if int(sample.split("_")[-1]) % self.train_test_ratio == 0]
-                    nb_new = len(new)
-                    self.x += new
-                else:
-                    logging.warning(f"WARNING: Invalid dataset mode {self.mode}, loading all images...")
-                    nb_new = len(data)
-                    self.x += data
 
-                self.y += [self.class_dict[c]] * nb_new
+                # Sort data
+                data = sorted(data)
+                nb_samples = len(data)
+
+                # Compute indices to extract correct data
+                nb_train = int(self.train_percentage * nb_samples)
+                nb_validation = int(self.validation_percentage * nb_samples)
+                nb_test = int(self.test_percentage * nb_samples)
+
+                # print(f"nb_train={nb_train}")
+                # print(f"nb_validation={nb_validation}")
+                # print(f"nb_test={nb_test}")
+                
+                if self.mode == "train":
+                    self.x += data[:nb_train]
+                    self.y += [self.class_dict[c]] * len(data[:nb_train])
+                    # print(f"TEST -> {len(data[:nb_train])} | {nb_train} | {len(self.x)} | {len(self.y)}")
+                elif self.mode == "validation":
+                    self.x += data[nb_train:nb_train + nb_validation]
+                    self.y += [self.class_dict[c]] * len(data[nb_train:nb_train + nb_validation])
+                    # print(f"TEST -> {len(data[nb_train:nb_train + nb_validation])} | {nb_validation} | {len(self.x)} | {len(self.y)}")
+                elif self.mode == "test":
+                    self.x += data[nb_train + nb_validation:]
+                    self.y += [self.class_dict[c]] * len(data[nb_train + nb_validation:])
+                    # print(f"TEST -> {len(data[nb_train + nb_validation:])} | {nb_test} | {len(self.x)} | {len(self.y)}")
+                else:
+                    print(f"Invalid dataset mode {self.mode}, loading all images...")
+                    self.x += data
+                    self.y += [self.class_dict[c]] * nb_samples
+        
+        assert len(self.x) == len(self.y)
+        # Reduce the number of samples to the specified number
+        if self.nb_max_samples is not None and self.nb_max_samples < len(self.x):
+            # Shuffle data in order to have multiple classes
+            x_and_y = list(zip(self.x, self.y))
+            random.shuffle(x_and_y)
+            x_and_y = x_and_y[:self.nb_max_samples]
+            self.x = [x for x,y in x_and_y]
+            self.y = [y for x,y in x_and_y]
+        assert len(self.x) == len(self.y)
+        
+        # print(f"Removed following samples from dataset because of missing data: {self.removed}")
+        # print(f"Number of samples in the dataset: {len(self.x)} | {len(self.y)}")
+        # print(f"Samples in the dataset: {self.x}")
 
     def _load_item_data(self, idx, data_path):
 
-        # Location Data
-        loc_x = -1
-        loc_y = -1
-        new_loc_x = -1
-        new_loc_y = -1
-        if "loc" in self.modalities or self.crop_transformation is not None:
-            with open(data_path + "_loc.txt", "r") as loc_file:
-                loc_x, loc_y = loc_file.readlines()[0].split(",")
-                loc_x = int(loc_x)
-                loc_y = int(loc_y)
-
         # RGB Data
         rgb = -1
-        if "rgb" in self.modalities:
+        if self.rgb_flag:
             rgb = cv2.imread(data_path + ".png")
             rgb = self.transformation(rgb)
 
         # Depth Data
         depth = -1
-        if "depth" in self.modalities:
+        if self.depth_flag:
             depth = cv2.imread(data_path + "_depth.png")
             depth = self.transformation(depth)
 
         # Mask Data
         mask = -1
-        if "mask" in self.modalities:
+        if self.mask_flag:
             mask = cv2.imread(data_path + "_mask.png")
+            if mask is None:
+                print(data_path)
             mask = self.transformation(mask)
+
+        # Location Data
+        loc_x = -1
+        loc_y = -1
+        if self.loc_flag:
+            with open(data_path + "_loc.txt", "r") as loc_file:
+                loc_x, loc_y = loc_file.readlines()[0].split(",")
+                loc_x = int(loc_x)
+                loc_y = int(loc_y)
 
         # Label
         label = self.y[idx]
 
         # Crop transformation
-        if self.crop_transformation is not None and loc_x != -1 and loc_y !=1:
+        if self.crop_transformation is not None:
             rgb, depth, mask, loc_x, loc_y = self.crop_transformation(rgb, depth, mask, loc_x, loc_y)
 
         return rgb, depth, mask, loc_x, loc_y, label
     
     def __getitem__(self, idx):
+        # print(f"Get data for sample {idx}: {self.x[idx]} from dataset {self}")
         data_path = os.path.join(self.path,
                                  "_".join(self.x[idx].split("_")[:-3]),
                                  "_".join(self.x[idx].split("_")[:-2]),
