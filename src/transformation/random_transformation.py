@@ -25,8 +25,6 @@ class RandomTransformation(object):
         self.h_flip = transforms.RandomHorizontalFlip(p=1)
         self.v_flip = transforms.RandomVerticalFlip(p=1)
 
-
-
     def __call__(self, rgb, depth, mask, loc_x, loc_y, label):
         """
         Perform cropping.
@@ -55,14 +53,18 @@ class RandomTransformation(object):
             # Horizontal flip
             if random.randint(0, 1) == 1:
                 rgb = self.h_flip(rgb)
-                depth = self.h_flip(depth)
-                mask = self.h_flip(mask)
+                if not isinstance(depth, int):
+                    depth = self.h_flip(depth)
+                if not isinstance(mask, int):
+                    mask = self.h_flip(mask)
             
             # Vertical flip
             if random.randint(0, 1) == 1:
                 rgb = self.v_flip(rgb)
-                depth = self.v_flip(depth)
-                mask = self.v_flip(mask)
+                if not isinstance(depth, int):
+                    depth = self.v_flip(depth)
+                if not isinstance(mask, int):
+                    mask = self.v_flip(mask)
 
             # Color jitter
             if random.randint(0, 1) == 1:
@@ -72,9 +74,9 @@ class RandomTransformation(object):
                                              hue=random.uniform(0, 0.5))(rgb)
                 
             # Gaussian blur
-            if random.randint(0, 1) == 1:
-                rgb = transforms.GaussianBlur(kernel_size=(5, 5),
-                                              sigma=(0.1, 5))(rgb)
+            # if random.randint(0, 1) == 1:
+            #     rgb = transforms.GaussianBlur(kernel_size=(5, 5),
+            #                                   sigma=(0.1, 5))(rgb)
                 
             return rgb, depth, mask, loc_x, loc_y, label
                 

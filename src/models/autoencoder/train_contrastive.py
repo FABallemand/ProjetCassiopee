@@ -14,10 +14,6 @@ def train_one_epoch(model, data_loader, reconstruction_loss_function, optimizer,
     # Enable training
     model.train(True)
 
-    # Initialise accuracy variables
-    total = 0
-    correct = 0
-
     # Initialise loss
     train_loss = 0.0
     
@@ -52,19 +48,13 @@ def train_one_epoch(model, data_loader, reconstruction_loss_function, optimizer,
         optimizer.zero_grad()
 
         # Make predictions for batch
-        p_encoded_x_1, p_predicted_label_1 = model(p_rgb_1)
-        p_encoded_x_2, p_predicted_label_2 = model(p_rgb_2)
-        n_encoded_x, n_predicted_label = model(n_rgb)
-
-        # Update accuracy variables
-        _, predicted = torch.max(p_predicted_label_1.data, 1)
-        total += len(p_label_1)
-        batch_correct = (predicted == p_label_1).sum().item()
-        correct += batch_correct
+        p_encoded_x_1, p_decoded_x_1 = model(p_rgb_1)
+        p_encoded_x_2, p_decoded_x_2 = model(p_rgb_2)
+        n_encoded_x, n_decoded_x = model(n_rgb)
 
         # Compute loss
         loss = contrastive_reconstruction_loss(p_encoded_x_1, p_encoded_x_2, n_encoded_x,
-                                               p_predicted_label_1, p_label_1, reconstruction_loss_function)
+                                               p_decoded_x_1, p_rgb_1, reconstruction_loss_function)
 
         # Compute gradient loss
         loss.backward()
@@ -78,21 +68,16 @@ def train_one_epoch(model, data_loader, reconstruction_loss_function, optimizer,
         # Log
         if i % 10 == 0:
             # Batch loss
-            print(f"    Batch {i}: accuracy={batch_correct / p_label_1.size(0)} | loss={loss}")
+            print(f"    Batch {i}: loss={loss}")
         i += 1
 
-    # Compute validation accuracy and loss
-    train_accuracy = correct / total
+    # Compute validation loss
     train_loss /= (i + 1) # Average loss over all batches of the epoch
     
-    return train_accuracy, train_loss
+    return train_loss
 
 
 def evaluate(model, data_loader, reconstruction_loss_function, device):
-
-    # Initialise accuracy variables
-    total = 0
-    correct = 0
 
     # Initialise losses
     validation_loss = 0.0
@@ -129,28 +114,18 @@ def evaluate(model, data_loader, reconstruction_loss_function, device):
             n_label = n_label.to(device)
 
             # Make predictions for batch
-            p_encoded_x_1, p_predicted_label_1 = model(p_rgb_1)
-            p_encoded_x_2, p_predicted_label_2 = model(p_rgb_2)
-            n_encoded_x, n_predicted_label = model(n_rgb)
-
-            # Update accuracy variables
-            _, predicted = torch.max(p_predicted_label_1.data, 1)
-            total += len(p_label_1)
-            batch_correct = (predicted == p_label_1).sum().item()
-            correct += batch_correct
+            p_encoded_x_1, p_decoded_x_1 = model(p_rgb_1)
+            p_encoded_x_2, p_decoded_x_2 = model(p_rgb_2)
+            n_encoded_x, n_decoded_x = model(n_rgb)
 
             # Compute loss
             loss = contrastive_reconstruction_loss(p_encoded_x_1, p_encoded_x_2, n_encoded_x,
-                                                   p_predicted_label_1, p_label_1, reconstruction_loss_function)
+                                                   p_decoded_x_1, p_rgb_1, reconstruction_loss_function)
 
             # Update batch loss
             validation_loss += loss.item()
 
-    # Compute validation accuracy and loss
-    validation_accuracy = correct / total
-    validation_loss /= (i + 1) # Average loss over all batches of the epoch
-
-    return validation_accuracy, validation_loss
+    return validation_loss
 
 
 def train(
@@ -166,10 +141,6 @@ def train(
         min_delta=1e-3,
         device=torch.device("cpu"),
         debug=False):
-
-    # Accuracies
-    train_accuracies = []
-    validation_accuracies = []
 
     # Losses
     train_losses = []
@@ -192,21 +163,18 @@ def train(
             # Train for one epoch
             if debug:
                 with torch.autograd.detect_anomaly():
-                    train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
-                    train_accuracies.append(train_accuracy)
+                    train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
                     train_losses.append(train_loss)
             else:
-                train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
-                train_accuracies.append(train_accuracy)
+                train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
                 train_losses.append(train_loss)
 
             # Evaluate model
-            validation_accuracy, validation_loss = evaluate(model, validation_data_loader, loss_function, device)
-            validation_accuracies.append(validation_accuracy)
+            validation_loss = evaluate(model, validation_data_loader, loss_function, device)
             validation_losses.append(validation_loss)
 
-            print(f"Train: accuracy={train_accuracy} | loss={train_loss}")
-            print(f"Validation: accuracy={validation_accuracy} | loss={validation_loss}")
+            print(f"Train: loss={train_loss}")
+            print(f"Validation: loss={validation_loss}")
 
             # Early stopping
             if early_stopping:
@@ -220,7 +188,7 @@ def train(
 
         run_epochs.append(epoch + 1)
 
-    return train_accuracies, train_losses, validation_accuracies, validation_losses, run_epochs
+    return train_losses, validation_losses, run_epochs
 
 
 def test(model, test_data_loader, reconstruction_path=None, tsne_flag=True, device=torch.device("cpu")):

@@ -21,14 +21,15 @@ def plot_summary(dataset, input_size, classes, modalities,
                  tsne_results_2d=None, tsne_results_3d=None, labels=None,
                  path="summary_plot.png"):
     # Create figure
-    nb_rows = 4 if tsne_results_2d or tsne_results_3d else 3
+    tsne_flag = tsne_results_2d is not None or tsne_results_3d is not None
+    nb_rows = 4 if tsne_flag else 3
     fig, axs = plt.subplots(nb_rows, 2, figsize=(20, 20))
 
     # Plot relevant data about the dataset and data loaders
     data = [
         ["Dataset", dataset],
         ["Input size", input_size],
-        ["Classes", classes if classes is not None else ""],
+        ["Classes", classes if classes is not None else "all"],
         ["Modalities", modalities],
         ["Transformation", transformation],
         ["Crop transformation", crop_transformation],
@@ -70,21 +71,22 @@ def plot_summary(dataset, input_size, classes, modalities,
     plot_loss(axs[1, 0], t, train_losses, validation_losses, run_epochs)
 
     # Plot accuracy
-    plot_loss(axs[1, 1], t, train_accuracies, validation_accuracies, run_epochs)
+    if train_accuracies is not None and validation_accuracies is not None:
+        plot_loss(axs[1, 1], t, train_accuracies, validation_accuracies, run_epochs)
 
     # Plot confusion matrix
-    if test_confusion_matrix:
+    if test_confusion_matrix is not None:
         sns.heatmap(test_confusion_matrix, annot=True, cmap="flare",  fmt="d", cbar=True, ax=axs[2, 0])
         axs[2, 0].set_title(f"Test accuracy: {test_accuracy}")
 
     # Plot 2D TSNE
-    if tsne_results_2d:
+    if tsne_results_2d is not None:
         plot_tsne_2d(axs[3, 0], tsne_results_2d, labels)
 
     # Plot 3D TSNE
-    if tsne_results_3d:
+    if tsne_results_3d is not None:
         axs[3, 1].remove()
-        axs[3, 1] = fig.add_subplot(4, 2, 7, projection="3d")
+        axs[3, 1] = fig.add_subplot(4, 2, 8, projection="3d")
         plot_tsne_2d(axs[3, 1], tsne_results_2d, labels)
 
     plt.savefig(path)

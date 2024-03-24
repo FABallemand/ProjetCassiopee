@@ -351,31 +351,6 @@ class RGBDObjectDataset_Unsupervised_Contrast(RGBDObjectDataset):
         return (f"RGBDObjectDataset_Unsupervised_Contrast(path={self.path}, mode={self.mode}, class_names={self.class_names}, modalities={self.modalities}, "
                 f"transformation={self.transformation}, crop_transformation={self.crop_transformation}, "
                 f"train_percentage={self.train_percentage}, validation_percentage={self.validation_percentage}, test_percentage={self.test_percentage}, nb_max_samples={self.nb_max_samples})")
-
-    # def __getitem__(self, p_idx):
-
-    #     # Load positive data 1
-    #     p_class = "_".join(self.x[p_idx].split("_")[:-3])
-    #     p_subclass = "_".join(self.x[p_idx].split("_")[:-2])
-    #     p_data_path = os.path.join(self.path,
-    #                                p_class,
-    #                                p_subclass,
-    #                                self.x[p_idx])
-    #     p_data = self._load_item_data(p_idx, p_data_path)
-        
-    #     # Load negative data
-    #     n_idx = random.randint(0, len(self) - 1)
-    #     while self.x[n_idx].startswith(p_class):
-    #         n_idx = random.randint(0, len(self) - 1)
-    #     n_class = "_".join(self.x[n_idx].split("_")[:-3])
-    #     n_subclass = "_".join(self.x[n_idx].split("_")[:-2])
-    #     n_data_path = os.path.join(self.path,
-    #                                n_class,
-    #                                n_subclass,
-    #                                self.x[n_idx])        
-    #     n_data = self._load_item_data(n_idx, n_data_path)
-
-    #     return [p_data, n_data]
         
     def __getitem__(self, p_idx_1):
 

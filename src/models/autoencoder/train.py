@@ -129,14 +129,14 @@ def train(
             # Train for one epoch
             if debug:
                 with torch.autograd.detect_anomaly():
-                    train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
+                    train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
                     train_losses.append(train_loss)
             else:
-                train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
+                train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
                 train_losses.append(train_loss)
 
             # Evaluate model
-            validation_accuracy, validation_loss = evaluate(model, validation_data_loader, loss_function, device)
+            validation_loss = evaluate(model, validation_data_loader, loss_function, device)
             validation_losses.append(validation_loss)
 
             print(f"Train: loss={train_loss}")

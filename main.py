@@ -25,7 +25,13 @@ if __name__=='__main__':
     abspath = os.path.abspath(__file__)
     dname = os.path.dirname(abspath)
     os.chdir(dname)
-
+    
+    # CNN
     # rgbd_object_cnn_supervised_training()
-    rgbd_object_ae_unsupervised_training()
+
+    # AE
+    # rgbd_object_ae_unsupervised_training()
+    rgbd_object_ae_unsupervised_contrastive_training()
+
+    # Combined model
     # rgbd_object_combined_supervised_training()

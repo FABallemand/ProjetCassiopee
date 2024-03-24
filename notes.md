@@ -54,4 +54,5 @@ tar -xzvf file.tar.gz
 Recognition](https://openaccess.thecvf.com/content_CVPR_2019/papers/Shi_Two-Stream_Adaptive_Graph_Convolutional_Networks_for_Skeleton-Based_Action_Recognition_CVPR_2019_paper.pdf)
 
 ## 📋 ToDo
-- Improve plot_results
+- Add cache files for datasets
+- Adjust TSNE perplexity (depending of the number of samples)

@@ -31,12 +31,15 @@ def rgbd_object_combined_supervised_contrastive_training():
     CROP_TRANSFORMATION = ObjectCrop(output_size=INPUT_SIZE,
                                      padding=(20,20),
                                      offset_range=(-10,10))
-    NB_MAX_TRAIN_SAMPLES = None
-    NB_MAX_VALIDATION_SAMPLES = None
-    NB_MAX_TEST_SAMPLES = None
+    # NB_MAX_TRAIN_SAMPLES = None
+    # NB_MAX_VALIDATION_SAMPLES = None
+    # NB_MAX_TEST_SAMPLES = None
+    NB_MAX_TRAIN_SAMPLES = 10
+    NB_MAX_VALIDATION_SAMPLES = 5
+    NB_MAX_TEST_SAMPLES = 40
 
     # Training parameters
-    BATCH_SIZE = 64   # Batch size
+    BATCH_SIZE = 1   # Batch size
     SHUFFLE = True    # Shuffle
     DROP_LAST = False # Drop last batch
 

@@ -32,12 +32,9 @@ def rgbd_object_ae_unsupervised_training():
     CROP_TRANSFORMATION = ObjectCrop(output_size=INPUT_SIZE,
                                      padding=(20,20),
                                      offset_range=(-10,10))
-    # NB_MAX_TRAIN_SAMPLES = None
-    # NB_MAX_VALIDATION_SAMPLES = None
-    # NB_MAX_TEST_SAMPLES = None
-    NB_MAX_TRAIN_SAMPLES = 128
-    NB_MAX_VALIDATION_SAMPLES = 64
-    NB_MAX_TEST_SAMPLES = 64
+    NB_MAX_TRAIN_SAMPLES = None
+    NB_MAX_VALIDATION_SAMPLES = None
+    NB_MAX_TEST_SAMPLES = None
 
     # Training parameters
     BATCH_SIZE = 64   # Batch size
@@ -124,18 +121,18 @@ def rgbd_object_ae_unsupervised_training():
     print("#### Training ####")
 
     # Train model
-    train_acc, train_loss, val_acc, val_loss, run_epochs = train(model,
-                                                                 train_data_loader,
-                                                                 validation_data_loader,
-                                                                 LOSS_FUNCTION,
-                                                                 OPTIMIZER_TYPE,
-                                                                 EPOCHS,
-                                                                 LEARNING_RATES,
-                                                                 EARLY_STOPPING,
-                                                                 PATIENCE,
-                                                                 MIN_DELTA,
-                                                                 DEVICE,
-                                                                 DEBUG)
+    train_loss, val_loss, run_epochs = train(model,
+                                             train_data_loader,
+                                             validation_data_loader,
+                                             LOSS_FUNCTION,
+                                             OPTIMIZER_TYPE,
+                                             EPOCHS,
+                                             LEARNING_RATES,
+                                             EARLY_STOPPING,
+                                             PATIENCE,
+                                             MIN_DELTA,
+                                             DEVICE,
+                                             DEBUG)
     
     # Save training time stop
     stop_timestamp = datetime.now()
@@ -156,8 +153,8 @@ def rgbd_object_ae_unsupervised_training():
                  EPOCHS, LEARNING_RATES,
                  EARLY_STOPPING, PATIENCE, MIN_DELTA,
                  start_timestamp, stop_timestamp, run_epochs,
-                 train_acc, train_loss,
-                 val_acc, val_loss,
+                 None, train_loss,
+                 None, val_loss,
                  None, None,
                  tsne_results_2d, tsne_results_3d, labels,
                  os.path.join(results_dir, results_file + "_res.png"))
