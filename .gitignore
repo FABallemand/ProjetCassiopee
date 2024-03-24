@@ -2,6 +2,7 @@ artemis/
 data/
 !data/*/test.ipynb
 train_results/
+*.ckpt
 nohup.out
 
 # Data
