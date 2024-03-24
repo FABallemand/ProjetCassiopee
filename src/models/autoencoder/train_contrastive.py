@@ -6,10 +6,10 @@ from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 
 from ...train import create_optimizer
-from ...loss.contrastive_loss import contrastive_classification_loss
+from ...loss.contrastive_loss import contrastive_reconstruction_loss
     
 
-def train_one_epoch(model, data_loader, classification_loss_function, optimizer, device):
+def train_one_epoch(model, data_loader, reconstruction_loss_function, optimizer, device):
 
     # Enable training
     model.train(True)
@@ -63,8 +63,8 @@ def train_one_epoch(model, data_loader, classification_loss_function, optimizer,
         correct += batch_correct
 
         # Compute loss
-        loss = contrastive_classification_loss(p_encoded_x_1, p_encoded_x_2, n_encoded_x,
-                                               p_predicted_label_1, p_label_1, classification_loss_function)
+        loss = contrastive_reconstruction_loss(p_encoded_x_1, p_encoded_x_2, n_encoded_x,
+                                               p_predicted_label_1, p_label_1, reconstruction_loss_function)
 
         # Compute gradient loss
         loss.backward()
@@ -88,7 +88,7 @@ def train_one_epoch(model, data_loader, classification_loss_function, optimizer,
     return train_accuracy, train_loss
 
 
-def evaluate(model, data_loader, classification_loss_function, device):
+def evaluate(model, data_loader, reconstruction_loss_function, device):
 
     # Initialise accuracy variables
     total = 0
@@ -140,8 +140,8 @@ def evaluate(model, data_loader, classification_loss_function, device):
             correct += batch_correct
 
             # Compute loss
-            loss = contrastive_classification_loss(p_encoded_x_1, p_encoded_x_2, n_encoded_x,
-                                                   p_predicted_label_1, p_label_1, classification_loss_function)
+            loss = contrastive_reconstruction_loss(p_encoded_x_1, p_encoded_x_2, n_encoded_x,
+                                                   p_predicted_label_1, p_label_1, reconstruction_loss_function)
 
             # Update batch loss
             validation_loss += loss.item()
@@ -223,14 +223,7 @@ def train(
     return train_accuracies, train_losses, validation_accuracies, validation_losses, run_epochs
 
 
-def test(model, test_data_loader, tsne_flag=True, device=torch.device("cpu")):
-    # Accuracy variables
-    correct = 0
-    total = 0
-
-    # Confusion matrix variables
-    all_label = None
-    all_predicted = None
+def test(model, test_data_loader, reconstruction_path=None, tsne_flag=True, device=torch.device("cpu")):
 
     # TSNE variable
     encoded_features = []
@@ -270,20 +263,6 @@ def test(model, test_data_loader, tsne_flag=True, device=torch.device("cpu")):
             p_encoded_x_2, p_predicted_label_2 = model(p_rgb_2)
             n_encoded_x, n_predicted_label = model(n_rgb)
 
-            # Update accuracy variables
-            _, predicted = torch.max(p_predicted_label_1.data, 1)
-            total += len(p_label_1)
-            batch_correct = (predicted == p_label_1).sum().item()
-            correct += batch_correct
-
-            # Update confusion matrix variables
-            if all_label is None and all_predicted is None:
-                all_label = p_label_1.detach().clone()
-                all_predicted = predicted.detach().clone()
-            else:
-                all_label = torch.cat((all_label, p_label_1))
-                all_predicted = torch.cat((all_predicted, predicted))
-
             # Save encoded features and labels
             encoded_features.append(p_encoded_x_1)
             labels.append(p_label_1)
@@ -291,12 +270,6 @@ def test(model, test_data_loader, tsne_flag=True, device=torch.device("cpu")):
             labels.append(p_label_2)
             encoded_features.append(n_encoded_x)
             labels.append(n_label)
-            
-    # Compute test accuracy
-    test_accuracy = correct / total
-
-    # Create "confusion matrix"
-    test_confusion_matrix = confusion_matrix(all_label.cpu(), all_predicted.cpu())
 
     # TSNE
     if tsne_flag:
@@ -304,7 +277,7 @@ def test(model, test_data_loader, tsne_flag=True, device=torch.device("cpu")):
         batch_size = p_rgb_1.shape[0]
 
         # Compute number of samples
-        nb_samples = (i + 1) * batch_size
+        nb_samples = 3 * (i + 1) * batch_size
 
         # Process inference results
         encoded_features_arr = torch.empty(size=(nb_samples, 256))
@@ -330,4 +303,4 @@ def test(model, test_data_loader, tsne_flag=True, device=torch.device("cpu")):
                        random_state=42)
         tsne_results_3d = tsne_3d.fit_transform(encoded_features_arr)
 
-    return test_accuracy, test_confusion_matrix, tsne_results_2d, tsne_results_3d, labels_arr
+    return tsne_results_2d, tsne_results_3d, labels_arr

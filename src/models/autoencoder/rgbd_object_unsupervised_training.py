@@ -1,7 +1,5 @@
 import os
-import sys
 from datetime import datetime
-import numpy as np
 
 import torch
 from torch.utils.data import DataLoader
@@ -12,11 +10,11 @@ from ...setup import setup_python, setup_pytorch
 from ...plot import plot_summary
 from ...transformation import RandomCrop, ObjectCrop
 from ...dataset import RGBDObjectDataset
-from .cnn import TestCNN
+from .autoencoder import TestAutoencoder
 from .train import train, test
 
 
-def rgbd_object_cnn_supervised_training():
+def rgbd_object_ae_unsupervised_training():
 
     # Begin set-up
     print("#### Set-Up ####")
@@ -34,20 +32,23 @@ def rgbd_object_cnn_supervised_training():
     CROP_TRANSFORMATION = ObjectCrop(output_size=INPUT_SIZE,
                                      padding=(20,20),
                                      offset_range=(-10,10))
-    NB_MAX_TRAIN_SAMPLES = None
-    NB_MAX_VALIDATION_SAMPLES = None
-    NB_MAX_TEST_SAMPLES = None
+    # NB_MAX_TRAIN_SAMPLES = None
+    # NB_MAX_VALIDATION_SAMPLES = None
+    # NB_MAX_TEST_SAMPLES = None
+    NB_MAX_TRAIN_SAMPLES = 128
+    NB_MAX_VALIDATION_SAMPLES = 64
+    NB_MAX_TEST_SAMPLES = 64
 
     # Training parameters
     BATCH_SIZE = 64   # Batch size
     SHUFFLE = True    # Shuffle
     DROP_LAST = False # Drop last batch
 
-    LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
-    OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
+    LOSS_FUNCTION = torch.nn.MSELoss() # Loss function
+    OPTIMIZER_TYPE = "SGD"             # Type of optimizer
 
-    EPOCHS = [1]          # Number of epochs
-    LEARNING_RATES = [0.001] # Learning rates
+    EPOCHS = [1]            # Number of epochs
+    LEARNING_RATES = [0.01] # Learning rates
     
     EARLY_STOPPING = False # Early stopping
     PATIENCE = 10          # Early stopping patience
@@ -64,7 +65,7 @@ def rgbd_object_cnn_supervised_training():
                                       modalities=MODALITIES,
                                       transformation=TRANSFORMATION,
                                       crop_transformation=CROP_TRANSFORMATION,
-                                      nb_samples=NB_MAX_TRAIN_SAMPLES)
+                                      nb_max_samples=NB_MAX_TRAIN_SAMPLES)
     
     print("## Validation Dataset ##")
     validation_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
@@ -72,7 +73,7 @@ def rgbd_object_cnn_supervised_training():
                                            modalities=MODALITIES,
                                            transformation=TRANSFORMATION,
                                            crop_transformation=CROP_TRANSFORMATION,
-                                           nb_samples=NB_MAX_VALIDATION_SAMPLES)
+                                           nb_max_samples=NB_MAX_VALIDATION_SAMPLES)
     
     print("## Test Dataset ##")
     test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
@@ -80,7 +81,7 @@ def rgbd_object_cnn_supervised_training():
                                      modalities=MODALITIES,
                                      transformation=TRANSFORMATION,
                                      crop_transformation=CROP_TRANSFORMATION,
-                                     nb_samples=NB_MAX_TEST_SAMPLES)
+                                     nb_max_samples=NB_MAX_TEST_SAMPLES)
     
     print(f"Train dataset -> {len(train_dataset)} samples")
     print(f"Validation dataset -> {len(validation_dataset)} samples")
@@ -110,14 +111,14 @@ def rgbd_object_cnn_supervised_training():
     # Create neural network
     print("#### Model ####")
 
-    model = TestCNN(nb_classes=len(train_dataset.class_dict)).to(DEVICE)
+    model = TestAutoencoder().to(DEVICE)
 
     # Save training time start
     start_timestamp = datetime.now()
 
     # Create path for saving things...
-    results_dir = f"train_results/supervised"
-    results_file = f"rgbd_object_cnn_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
+    results_dir = f"train_results/unsupervised"
+    results_file = f"rgbd_object_ae_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
 
     # Begin training
     print("#### Training ####")
@@ -140,7 +141,7 @@ def rgbd_object_cnn_supervised_training():
     stop_timestamp = datetime.now()
     
     # Test model
-    test_acc, test_confusion_matrix = test(model, test_data_loader, DEVICE)
+    tsne_results_2d, tsne_results_3d, labels = test(model, test_data_loader, None, True, DEVICE)
 
     # Save model
     torch.save(model.state_dict(), os.path.join(results_dir, results_file))
@@ -157,9 +158,10 @@ def rgbd_object_cnn_supervised_training():
                  start_timestamp, stop_timestamp, run_epochs,
                  train_acc, train_loss,
                  val_acc, val_loss,
-                 test_acc, test_confusion_matrix,
+                 None, None,
+                 tsne_results_2d, tsne_results_3d, labels,
                  os.path.join(results_dir, results_file + "_res.png"))
-
+    
     # Plot model architecture
     graph = torchview.draw_graph(model, input_size=(BATCH_SIZE, 3, INPUT_SIZE[0], INPUT_SIZE[1]), device=DEVICE,
                                  save_graph=True, filename=results_file + "_arc", directory=results_dir)

@@ -183,7 +183,7 @@ def train(
     return train_accuracies, train_losses, validation_accuracies, validation_losses, run_epochs
 
 
-def test(model, test_data_loader, tsne_path=None, device=torch.device("cpu")):
+def test(model, test_data_loader, tsne_flag=True, device=torch.device("cpu")):
     # Accuracy variables
     correct = 0
     total = 0
@@ -242,7 +242,13 @@ def test(model, test_data_loader, tsne_path=None, device=torch.device("cpu")):
     test_confusion_matrix = confusion_matrix(all_label.cpu(), all_predicted.cpu())
 
     # TSNE
-    if tsne_path is not None:
+    if tsne_flag:
+        # Compute batch size
+        batch_size = rgb.shape[0]
+
+        # Compute number of samples
+        nb_samples = (i + 1) * batch_size
+
         # Process inference results
         encoded_features_arr = torch.empty(size=(nb_samples, 256))
         for i, batch in enumerate(encoded_features):
@@ -251,17 +257,20 @@ def test(model, test_data_loader, tsne_path=None, device=torch.device("cpu")):
         for i, batch in enumerate(labels):
             labels_arr[i * batch_size:(i + 1) * batch_size] = batch
 
-        # Apply TSNE
-        tsne = TSNE(n_components=2,
-                    perplexity=30,
-                    n_iter=1000,
-                    init="pca",
-                    random_state=42)
-        tsne_results = tsne.fit_transform(encoded_features_arr)
+        # Apply 2D TSNE
+        tsne_2d = TSNE(n_components=2,
+                       perplexity=30,
+                       n_iter=1000,
+                       init="pca",
+                       random_state=42)
+        tsne_results_2d = tsne_2d.fit_transform(encoded_features_arr)
 
-        # Save TSNE plot
-        fig, ax = plt.subplots(figsize=(10, 10))
-        ax.scatter(tsne_results[:,0], tsne_results[:,1], c=labels_arr, s=50, alpha=0.8)
-        plt.savefig(tsne_path)
+        # Apply 3D TSNE
+        tsne_3d = TSNE(n_components=3,
+                       perplexity=30,
+                       n_iter=1000,
+                       init="pca",
+                       random_state=42)
+        tsne_results_3d = tsne_3d.fit_transform(encoded_features_arr)
 
-    return test_accuracy, test_confusion_matrix
+    return test_accuracy, test_confusion_matrix, tsne_results_2d, tsne_results_3d, labels_arr

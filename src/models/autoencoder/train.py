@@ -1,6 +1,8 @@
 import torch
-import torch.nn as nn
 from sklearn.metrics import confusion_matrix
+from sklearn.manifold import TSNE
+
+import matplotlib.pyplot as plt
 
 from ...train import create_optimizer
 
@@ -18,10 +20,10 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, device):
         # Load and prepare batch
         rgb, depth, mask, loc_x, loc_y, label = batch
         rgb = rgb.to(device)
-        depth = depth.to(device)
-        mask = mask.to(device)
-        loc_x = loc_x.to(device)
-        loc_y = loc_y.to(device)
+        # depth = depth.to(device)
+        # mask = mask.to(device)
+        # loc_x = loc_x.to(device)
+        # loc_y = loc_y.to(device)
         label = label.to(device)
 
         # Zero gradient
@@ -71,10 +73,10 @@ def evaluate(model, data_loader, loss_function, device):
             # Load and prepare batch
             rgb, depth, mask, loc_x, loc_y, label = batch
             rgb = rgb.to(device)
-            depth = depth.to(device)
-            mask = mask.to(device)
-            loc_x = loc_x.to(device)
-            loc_y = loc_y.to(device)
+            # depth = depth.to(device)
+            # mask = mask.to(device)
+            # loc_x = loc_x.to(device)
+            # loc_y = loc_y.to(device)
             label = label.to(device)
 
             # Make predictions for batch
@@ -155,30 +157,62 @@ def train(
     return train_losses, validation_losses, run_epochs
 
 
-def test(model, test_data_loader, device):
-    # Accuracy variables
-    correct = 0
-    total = 0
+def test(model, test_data_loader, reconstruction_path=None, tsne_flag=True, device=torch.device("cpu")):
 
-    # Confusion matrix variables
-    all_labels = None
-    all_predicted = None
+    # TSNE variable
+    encoded_features = []
+    labels = []
 
+    # Run inference
     with torch.no_grad():
         for i, batch in enumerate(test_data_loader):
             
             # Load and prepare batch
             rgb, depth, mask, loc_x, loc_y, label = batch
             rgb = rgb.to(device)
-            depth = depth.to(device)
-            mask = mask.to(device)
-            loc_x = loc_x.to(device)
-            loc_y = loc_y.to(device)
+            # depth = depth.to(device)
+            # mask = mask.to(device)
+            # loc_x = loc_x.to(device)
+            # loc_y = loc_y.to(device)
             label = label.to(device)
             
             # Make predictions for batch
             encoded, decoded = model(rgb)
-            
-    # ???
 
-    return None
+            # Save encoded features and labels
+            encoded_features.append(encoded)
+            labels.append(label)
+
+    # TSNE
+    if tsne_flag:
+        # Compute batch size
+        batch_size = rgb.shape[0]
+
+        # Compute number of samples
+        nb_samples = (i + 1) * batch_size
+
+        # Process inference results
+        encoded_features_arr = torch.empty(size=(nb_samples, 256))
+        for i, batch in enumerate(encoded_features):
+            encoded_features_arr[i * batch_size:(i + 1) * batch_size,:] = batch
+        labels_arr = torch.empty(size=(nb_samples,))
+        for i, batch in enumerate(labels):
+            labels_arr[i * batch_size:(i + 1) * batch_size] = batch
+
+        # Apply 2D TSNE
+        tsne_2d = TSNE(n_components=2,
+                       perplexity=30,
+                       n_iter=1000,
+                       init="pca",
+                       random_state=42)
+        tsne_results_2d = tsne_2d.fit_transform(encoded_features_arr)
+
+        # Apply 3D TSNE
+        tsne_3d = TSNE(n_components=3,
+                       perplexity=30,
+                       n_iter=1000,
+                       init="pca",
+                       random_state=42)
+        tsne_results_3d = tsne_3d.fit_transform(encoded_features_arr)
+
+    return tsne_results_2d, tsne_results_3d, labels_arr

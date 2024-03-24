@@ -22,10 +22,10 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, device):
         # Load and prepare batch
         rgb, depth, mask, loc_x, loc_y, label = batch
         rgb = rgb.to(device)
-        depth = depth.to(device)
-        mask = mask.to(device)
-        loc_x = loc_x.to(device)
-        loc_y = loc_y.to(device)
+        # depth = depth.to(device)
+        # mask = mask.to(device)
+        # loc_x = loc_x.to(device)
+        # loc_y = loc_y.to(device)
         label = label.to(device)
 
         # Zero gradient
@@ -83,10 +83,10 @@ def evaluate(model, data_loader, loss_function, device):
             # Load and prepare batch
             rgb, depth, mask, loc_x, loc_y, label = batch
             rgb = rgb.to(device)
-            depth = depth.to(device)
-            mask = mask.to(device)
-            loc_x = loc_x.to(device)
-            loc_y = loc_y.to(device)
+            # depth = depth.to(device)
+            # mask = mask.to(device)
+            # loc_x = loc_x.to(device)
+            # loc_y = loc_y.to(device)
             label = label.to(device)
 
             # Make predictions for batch
@@ -195,10 +195,10 @@ def test(model, test_data_loader, device=torch.device("cpu")):
             # Load and prepare batch
             rgb, depth, mask, loc_x, loc_y, label = batch
             rgb = rgb.to(device)
-            depth = depth.to(device)
-            mask = mask.to(device)
-            loc_x = loc_x.to(device)
-            loc_y = loc_y.to(device)
+            # depth = depth.to(device)
+            # mask = mask.to(device)
+            # loc_x = loc_x.to(device)
+            # loc_y = loc_y.to(device)
             label = label.to(device)
             
             # Make predictions for batch
