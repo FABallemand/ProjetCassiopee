@@ -6,6 +6,7 @@ import torchvision
 from torch.utils.data import Dataset
 
 from ..transformation.custom_crop import RandomCrop, ObjectCrop
+from ..transformation.random_transformation import RandomTransformation
 
 
 DEFAULT_TRANSOFRMATION = torchvision.transforms.Compose([torchvision.transforms.ToTensor()])
@@ -78,8 +79,10 @@ class RGBDObjectDataset(Dataset):
         self._load_data()
 
     def __str__(self):
-        return f"RGBDObjectDataset -> path={self.path} | mode={self.mode}"
-
+        return (f"RGBDObjectDataset(path={self.path}, mode={self.mode}, class_names={self.class_names}, modalities={self.modalities}, "
+                f"transformation={self.transformation}, crop_transformation={self.crop_transformation}, "
+                f"train_percentage={self.train_percentage}, validation_percentage={self.validation_percentage}, test_percentage={self.test_percentage}, nb_max_samples={self.nb_max_samples})")
+    
     def __len__(self):
         return len(self.y)
     
@@ -227,18 +230,15 @@ class RGBDObjectDataset(Dataset):
 
 
 class RGBDObjectDataset_Supervised_Contrast(RGBDObjectDataset):
-    """
-    PyTorch dataset for the RGB-D Objects dataset.
-    Task: supervised learning with contrastive learning.
-    Only override __getitem__ method.
-    Link: https://rgbd-dataset.cs.washington.edu/dataset.html
-    """
 
     def __init__(self, path, mode, class_names=None, modalities=["rgb"],
                  transformation=DEFAULT_TRANSOFRMATION, crop_transformation=None,
                  train_percentage=0.6, validation_percentage=0.2, test_percentage=0.2, nb_max_samples=None):
         """
-        Initialise RGBDObjectDataset_Contrast instance.
+        PyTorch dataset for the RGB-D Objects dataset.
+        Task: supervised learning with contrastive learning.
+        Only override __getitem__ method.
+        Link: https://rgbd-dataset.cs.washington.edu/dataset.html
 
         Parameters
         ----------
@@ -265,6 +265,11 @@ class RGBDObjectDataset_Supervised_Contrast(RGBDObjectDataset):
         """
         super().__init__(path, mode, class_names, modalities, transformation, crop_transformation, train_percentage, validation_percentage, test_percentage, nb_max_samples)
 
+    def __str__(self):
+        return (f"RGBDObjectDataset_Supervised_Contrast(path={self.path}, mode={self.mode}, class_names={self.class_names}, modalities={self.modalities}, "
+                f"transformation={self.transformation}, crop_transformation={self.crop_transformation}, "
+                f"train_percentage={self.train_percentage}, validation_percentage={self.validation_percentage}, test_percentage={self.test_percentage}, nb_max_samples={self.nb_max_samples})")
+    
     def __getitem__(self, p_idx_1):
 
         # Load positive data 1
@@ -340,17 +345,51 @@ class RGBDObjectDataset_Unsupervised_Contrast(RGBDObjectDataset):
             Maximum number of samples in the dataset, by default None
         """
         super().__init__(path, mode, class_names, modalities, transformation, crop_transformation, train_percentage, validation_percentage, test_percentage, nb_max_samples)
+        self.generate_p_2 = RandomTransformation(output_size=(256, 256))
 
-    def __getitem__(self, p_idx):
+    def __str__(self):
+        return (f"RGBDObjectDataset_Unsupervised_Contrast(path={self.path}, mode={self.mode}, class_names={self.class_names}, modalities={self.modalities}, "
+                f"transformation={self.transformation}, crop_transformation={self.crop_transformation}, "
+                f"train_percentage={self.train_percentage}, validation_percentage={self.validation_percentage}, test_percentage={self.test_percentage}, nb_max_samples={self.nb_max_samples})")
+
+    # def __getitem__(self, p_idx):
+
+    #     # Load positive data 1
+    #     p_class = "_".join(self.x[p_idx].split("_")[:-3])
+    #     p_subclass = "_".join(self.x[p_idx].split("_")[:-2])
+    #     p_data_path = os.path.join(self.path,
+    #                                p_class,
+    #                                p_subclass,
+    #                                self.x[p_idx])
+    #     p_data = self._load_item_data(p_idx, p_data_path)
+        
+    #     # Load negative data
+    #     n_idx = random.randint(0, len(self) - 1)
+    #     while self.x[n_idx].startswith(p_class):
+    #         n_idx = random.randint(0, len(self) - 1)
+    #     n_class = "_".join(self.x[n_idx].split("_")[:-3])
+    #     n_subclass = "_".join(self.x[n_idx].split("_")[:-2])
+    #     n_data_path = os.path.join(self.path,
+    #                                n_class,
+    #                                n_subclass,
+    #                                self.x[n_idx])        
+    #     n_data = self._load_item_data(n_idx, n_data_path)
+
+    #     return [p_data, n_data]
+        
+    def __getitem__(self, p_idx_1):
 
         # Load positive data 1
-        p_class = "_".join(self.x[p_idx].split("_")[:-3])
-        p_subclass = "_".join(self.x[p_idx].split("_")[:-2])
-        p_data_path = os.path.join(self.path,
-                                   p_class,
-                                   p_subclass,
-                                   self.x[p_idx])
-        p_data = self._load_item_data(p_idx, p_data_path)
+        p_class = "_".join(self.x[p_idx_1].split("_")[:-3])
+        p_subclass_1 = "_".join(self.x[p_idx_1].split("_")[:-2])
+        p_data_path_1 = os.path.join(self.path,
+                                     p_class,
+                                     p_subclass_1,
+                                     self.x[p_idx_1])
+        p_data_1 = self._load_item_data(p_idx_1, p_data_path_1)
+
+        # Create positive data 2 from positive data 1
+        p_data_2 = self.generate_p_2(*p_data_1)
         
         # Load negative data
         n_idx = random.randint(0, len(self) - 1)
@@ -364,4 +403,4 @@ class RGBDObjectDataset_Unsupervised_Contrast(RGBDObjectDataset):
                                    self.x[n_idx])        
         n_data = self._load_item_data(n_idx, n_data_path)
 
-        return [p_data, n_data]
+        return [p_data_1, p_data_2, n_data]
