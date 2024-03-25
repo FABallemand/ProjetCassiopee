@@ -1,3 +1,3 @@
-from .autoencoder import *
-from .combined_model import *
-from .cnn import *
+from .mocaplab import *
+from .motion_x import *
+from .rgbd_object import *

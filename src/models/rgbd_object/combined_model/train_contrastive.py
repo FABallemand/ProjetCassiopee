@@ -5,8 +5,8 @@ from sklearn.manifold import TSNE
 
 import matplotlib.pyplot as plt
 
-from ...train import create_optimizer
-from ...loss.contrastive_loss import contrastive_classification_loss
+from ....train import create_optimizer
+from ....loss.contrastive_loss import contrastive_classification_loss
     
 
 def train_one_epoch(model, data_loader, classification_loss_function, optimizer, device):

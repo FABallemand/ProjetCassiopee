@@ -9,9 +9,9 @@ from torchvision import transforms
 
 sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee")
 from src.setup import setup_python, setup_pytorch
-from src import plot_results
 from src.dataset import MocaplabDataset
-from mocaplab_fc import MocaplabFC
+from cnn import TestCNN
+from plot_results import plot_results
 from train import *
 
 if __name__=='__main__':
@@ -23,22 +23,23 @@ if __name__=='__main__':
     setup_python()
 
     # Set-up PyTorch
-    DEVICE = setup_pytorch()
+    #DEVICE = setup_pytorch()
+    DEVICE = torch.device("cpu")
 
     # Dataset parameters
     
-    NB_TRAIN_SAMPLES = None
-    NB_VALIDATION_SAMPLES = None
-    NB_TEST_SAMPLES = None
+    NB_MAX_TRAIN_SAMPLES = None
+    NB_MAX_VALIDATION_SAMPLES = None
+    NB_MAX_TEST_SAMPLES = None
 
     # Training parameters
-    BATCH_SIZE = 1 # Batch size
+    BATCH_SIZE = 8 # Batch size
 
     LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
     OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
 
-    EPOCHS = [32, 16, 8, 4]                     # Number of epochs
-    LEARNING_RATES = [0.1, 0.01, 0.001, 0.0001] # Learning rates
+    EPOCHS = [32]                     # Number of epochs
+    LEARNING_RATES = [0.001] # Learning rates
     
     EARLY_STOPPING = False # Early stopping flag
     PATIENCE = 10          # Early stopping patience
@@ -59,11 +60,12 @@ if __name__=='__main__':
     # Split dataset
     n = len(dataset)
     diff = n - int(n*0.8) - 2*int(n*0.1)
-    train_dataset, validation_dataset, test_dataset = torch.utils.data.random_split(dataset, [int(n*0.8), int(n*0.1), int(n*0.1)+diff])
+    train_dataset, validation_dataset, test_dataset = torch.utils.data.random_split(dataset, [int(n*0.5), int(n*0.2), int(n*0.3)+diff])
     
-    #print(f"Train dataset -> {len(train_dataset.dataset.data)} samples")
-    #print(f"Test dataset -> {len(test_dataset.dataset.data)} samples")
-    #print(f"Validation dataset -> {len(validation_dataset.dataset.data)} samples")
+    print(f"Total length -> {len(dataset)} samples")
+    print(f"Train dataset -> {len(train_dataset)} samples")
+    print(f"Test dataset -> {len(test_dataset)} samples")
+    print(f"Validation dataset -> {len(validation_dataset)} samples")
     
     # Data loaders
     print("#### Data Loaders ####")
@@ -82,13 +84,13 @@ if __name__=='__main__':
     
     # Create neural network
     print("#### Model ####")
-    model = MocaplabFC(dataset.max_length*237).to(DEVICE)
+    model = TestCNN(nb_classes=2).to(DEVICE)
 
     # Save training time start
     start_timestamp = datetime.now()
 
     # Create path for saving things...
-    model_path = f"models/model_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
+    model_path = f"model_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
 
     # Begin training
     print("#### Training ####")
@@ -122,7 +124,7 @@ if __name__=='__main__':
                  test_acc, test_confusion_matrix, stop_timestamp, model_path)
     
     # Save model
-    torch.save(model.state_dict(), model_path)
+    torch.save(model.state_dict(), "self_supervised_learning/dev/ProjetCassiopee/src/models/mocaplab_fc/saved_models/" + model_path + ".ckpt")
     
     # End training
     print("#### End ####")

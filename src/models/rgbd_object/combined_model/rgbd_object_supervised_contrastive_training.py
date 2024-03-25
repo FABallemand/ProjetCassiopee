@@ -6,10 +6,10 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 import torchview
 
-from ...setup import setup_python, setup_pytorch
-from ...plot import plot_summary
-from ...transformation import RandomCrop, ObjectCrop
-from ...dataset import RGBDObjectDataset_Supervised_Contrast
+from ....setup import setup_python, setup_pytorch
+from ....plot import plot_summary
+from ....transformation import RandomCrop, ObjectCrop
+from ....dataset import RGBDObjectDataset_Supervised_Contrast
 from .combined_model import CombinedModel
 from .train_contrastive import train, test
 

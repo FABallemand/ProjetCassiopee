@@ -1,9 +1,9 @@
 import os
 # import subprocess
 
-from src.models.cnn import rgbd_object_cnn_supervised_training
-from src.models.autoencoder import rgbd_object_ae_unsupervised_training, rgbd_object_ae_unsupervised_contrastive_training
-from src.models.combined_model import rgbd_object_combined_supervised_training, rgbd_object_combined_supervised_contrastive_training
+from src.models.rgbd_object.cnn import rgbd_object_cnn_supervised_training
+from src.models.rgbd_object.autoencoder import rgbd_object_ae_unsupervised_training, rgbd_object_ae_unsupervised_contrastive_training
+from src.models.rgbd_object.combined_model import rgbd_object_combined_supervised_training, rgbd_object_combined_supervised_contrastive_training
 
 # Run with: nohup python3 main.py &
 
@@ -27,11 +27,11 @@ if __name__=='__main__':
     os.chdir(dname)
     
     # CNN
-    # rgbd_object_cnn_supervised_training()
+    rgbd_object_cnn_supervised_training()
 
     # AE
     # rgbd_object_ae_unsupervised_training()
-    rgbd_object_ae_unsupervised_contrastive_training()
+    # rgbd_object_ae_unsupervised_contrastive_training()
 
     # Combined model
     # rgbd_object_combined_supervised_training()

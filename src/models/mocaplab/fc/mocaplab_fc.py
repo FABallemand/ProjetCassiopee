@@ -9,7 +9,7 @@ class MocaplabFC(nn.Module):
         self.fc3 = nn.Linear(64, 2)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim = 1)
     
     def forward(self, x) :
         x = self.fc1(x)

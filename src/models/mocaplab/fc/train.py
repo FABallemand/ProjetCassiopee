@@ -1,13 +1,14 @@
 import torch
 from sklearn.metrics import confusion_matrix
-
-from ...train import create_optimizer
-
+import seaborn as sns
+import numpy as np
+import matplotlib.pyplot as plt
+from src.train import create_optimizer
 
 def train_one_epoch(model, data_loader, loss_function, optimizer, device):
 
     # Enable training
-    model.train(True)
+    model.train(True).double()
 
     # Initialise accuracy variables
     total = 0
@@ -20,22 +21,20 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, device):
     for i, batch in enumerate(data_loader):
 
         # Load and prepare batch
-        rgb, depth, mask, loc_x, loc_y, label = batch
-        rgb = rgb.to(device)
-        # depth = depth.to(device)
-        # mask = mask.to(device)
-        # loc_x = loc_x.to(device)
-        # loc_y = loc_y.to(device)
+        data, label = batch
+        data = data.to(device)
         label = label.to(device)
 
         # Zero gradient
         optimizer.zero_grad()
 
         # Make predictions for batch
-        output = model(rgb)
+        data_flattened = data.view(data.size(0), -1)
+        output = model(data_flattened.double())
 
         # Update accuracy variables
-        _, predicted = torch.max(output.data, 1)
+        _, predicted = torch.max(output.data, dim=1)
+
         total += len(label)
         batch_correct = (predicted == label).sum().item()
         correct += batch_correct
@@ -81,21 +80,20 @@ def evaluate(model, data_loader, loss_function, device):
         for i, batch in enumerate(data_loader):
             
             # Load and prepare batch
-            rgb, depth, mask, loc_x, loc_y, label = batch
-            rgb = rgb.to(device)
-            # depth = depth.to(device)
-            # mask = mask.to(device)
-            # loc_x = loc_x.to(device)
-            # loc_y = loc_y.to(device)
+            data, label = batch
+            data = data.to(device)
             label = label.to(device)
 
             # Make predictions for batch
-            output = model(rgb)
+            data_flattened = data.view(data.size(0), -1)
+            output = model(data_flattened.double())
 
             # Update accuracy variables
-            _, predicted = torch.max(output.data, 1)
+            _, predicted = torch.max(output.data, dim=1)
+
             total += len(label)
-            correct = (predicted == label).sum().item()
+            batch_correct = (predicted == label).sum().item()
+            correct += batch_correct
 
             # Compute loss
             loss = loss_function(output, label)
@@ -141,7 +139,7 @@ def train(
     for epochs, learning_rate in list(zip(epochs_list, learning_rates_list)):
 
         # Create optimizer
-        optimizer = create_optimizer(optimizer_type, model, learning_rate, momentum=0.6)
+        optimizer = create_optimizer(optimizer_type, model, learning_rate)
 
         for epoch in range(epochs):
             print(f"#### EPOCH {epoch} ####")
@@ -193,21 +191,20 @@ def test(model, test_data_loader, device=torch.device("cpu")):
         for i, batch in enumerate(test_data_loader):
             
             # Load and prepare batch
-            rgb, depth, mask, loc_x, loc_y, label = batch
-            rgb = rgb.to(device)
-            # depth = depth.to(device)
-            # mask = mask.to(device)
-            # loc_x = loc_x.to(device)
-            # loc_y = loc_y.to(device)
+            data, label = batch
+            data = data.to(device)
             label = label.to(device)
-            
+
             # Make predictions for batch
-            output = model(rgb)
+            data_flattened = data.view(data.size(0), -1)
+            output = model(data_flattened.double())
 
             # Update accuracy variables
-            _, predicted = torch.max(output.data, 1)
+            _, predicted = torch.max(output.data, dim=1)
+
             total += len(label)
-            correct += (predicted == label).sum().item()
+            batch_correct = (predicted == label).sum().item()
+            correct += batch_correct
 
             # Update confusion matrix variables
             if all_label is None and all_predicted is None:

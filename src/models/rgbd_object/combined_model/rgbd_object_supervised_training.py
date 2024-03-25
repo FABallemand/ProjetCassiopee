@@ -6,15 +6,15 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 import torchview
 
-from ...setup import setup_python, setup_pytorch
-from ...plot import plot_summary
-from ...transformation import RandomCrop, ObjectCrop
-from ...dataset import RGBDObjectDataset
-from .autoencoder import TestAutoencoder
+from ....setup import setup_python, setup_pytorch
+from ....plot import plot_summary
+from ....transformation import RandomCrop, ObjectCrop
+from ....dataset import RGBDObjectDataset
+from .combined_model import CombinedModel
 from .train import train, test
 
 
-def rgbd_object_ae_unsupervised_training():
+def rgbd_object_combined_supervised_training():
 
     # Begin set-up
     print("#### Set-Up ####")
@@ -41,10 +41,10 @@ def rgbd_object_ae_unsupervised_training():
     SHUFFLE = True    # Shuffle
     DROP_LAST = False # Drop last batch
 
-    LOSS_FUNCTION = torch.nn.MSELoss() # Loss function
-    OPTIMIZER_TYPE = "SGD"             # Type of optimizer
+    LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
+    OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
 
-    EPOCHS = [1]            # Number of epochs
+    EPOCHS = [1]         # Number of epochs
     LEARNING_RATES = [0.01] # Learning rates
     
     EARLY_STOPPING = False # Early stopping
@@ -108,37 +108,37 @@ def rgbd_object_ae_unsupervised_training():
     # Create neural network
     print("#### Model ####")
 
-    model = TestAutoencoder().to(DEVICE)
+    model = CombinedModel().to(DEVICE)
 
     # Save training time start
     start_timestamp = datetime.now()
 
     # Create path for saving things...
-    results_dir = f"train_results/unsupervised"
-    results_file = f"rgbd_object_ae_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
+    results_dir = f"train_results/supervised"
+    results_file = f"rgbd_object_combined_model_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
 
     # Begin training
     print("#### Training ####")
 
     # Train model
-    train_loss, val_loss, run_epochs = train(model,
-                                             train_data_loader,
-                                             validation_data_loader,
-                                             LOSS_FUNCTION,
-                                             OPTIMIZER_TYPE,
-                                             EPOCHS,
-                                             LEARNING_RATES,
-                                             EARLY_STOPPING,
-                                             PATIENCE,
-                                             MIN_DELTA,
-                                             DEVICE,
-                                             DEBUG)
+    train_acc, train_loss, val_acc, val_loss, run_epochs = train(model,
+                                                                 train_data_loader,
+                                                                 validation_data_loader,
+                                                                 LOSS_FUNCTION,
+                                                                 OPTIMIZER_TYPE,
+                                                                 EPOCHS,
+                                                                 LEARNING_RATES,
+                                                                 EARLY_STOPPING,
+                                                                 PATIENCE,
+                                                                 MIN_DELTA,
+                                                                 DEVICE,
+                                                                 DEBUG)
     
     # Save training time stop
     stop_timestamp = datetime.now()
     
     # Test model
-    tsne_results_2d, tsne_results_3d, labels = test(model, test_data_loader, None, True, DEVICE)
+    test_acc, test_confusion_matrix, tsne_results_2d, tsne_results_3d, labels = test(model, test_data_loader, os.path.join(results_dir, results_file + "_tsne.png"), DEVICE)
 
     # Save model
     torch.save(model.state_dict(), os.path.join(results_dir, results_file))
@@ -153,9 +153,9 @@ def rgbd_object_ae_unsupervised_training():
                  EPOCHS, LEARNING_RATES,
                  EARLY_STOPPING, PATIENCE, MIN_DELTA,
                  start_timestamp, stop_timestamp, run_epochs,
-                 None, train_loss,
-                 None, val_loss,
-                 None, None,
+                 train_acc, train_loss,
+                 val_acc, val_loss,
+                 test_acc, test_confusion_matrix,
                  tsne_results_2d, tsne_results_3d, labels,
                  os.path.join(results_dir, results_file + "_res.png"))
     

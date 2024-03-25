@@ -87,20 +87,12 @@ class MocaplabDataset(Dataset):
 
         data = self.read_csv(data_path)
         label = self.y[idx]
-        label = [0, 1] if label==1 else [1, 0]
-        label = np.stack(label)                 # format incorrect
 
         if self.padding:
             data = data.tolist()
             for _ in range(self.max_length-len(data)) :
                 data.append([0.0 for _ in range(237)])
             data = np.stack(data)
-
-            '''nb_padding_rows = self.max_length - data.shape[0]
-            empty_rows = {c: [0 for _ in range(nb_padding_rows)] for c in data.columns}
-            empty_data = pd.DataFrame(empty_rows)
-            data = pd.concat([data, empty_data], ignore_index=True)
-            data = data.to_numpy()'''
         
         return data, label
     

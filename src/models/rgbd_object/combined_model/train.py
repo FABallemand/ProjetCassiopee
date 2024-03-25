@@ -4,7 +4,7 @@ from sklearn.manifold import TSNE
 
 import matplotlib.pyplot as plt
 
-from ...train import create_optimizer
+from ....train import create_optimizer
 
 
 def train_one_epoch(model, data_loader, loss_function, optimizer, device):

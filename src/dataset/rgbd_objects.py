@@ -379,3 +379,73 @@ class RGBDObjectDataset_Unsupervised_Contrast(RGBDObjectDataset):
         n_data = self._load_item_data(n_idx, n_data_path)
 
         return [p_data_1, p_data_2, n_data]
+    
+
+class RGBDObjectDataset_Unsupervised_Contrast_bis(RGBDObjectDataset):
+    """
+    PyTorch dataset for the RGB-D Objects dataset.
+    Task: unsupervised learning with contrastive learning.
+    Only override __getitem__ method.
+    Link: https://rgbd-dataset.cs.washington.edu/dataset.html
+    """
+
+    def __init__(self, path, mode, class_names=None, modalities=["rgb"],
+                 transformation=DEFAULT_TRANSOFRMATION, crop_transformation=None,
+                 train_percentage=0.6, validation_percentage=0.2, test_percentage=0.2, nb_max_samples=None):
+        """
+        Initialise RGBDObjectDataset_Contrast instance.
+
+        Parameters
+        ----------
+        path : str
+            Path too the dataset
+        mode : str
+            Dataset use: "train", "validation" or "test"
+        class_names : List[str], optional
+            Name of the class to load data from, by default None
+        modalities : list, optional
+            Modalities to load: "rgb", "depth", "mask", "loc", by default ["rgb"]
+        transformation : torchvision.transforms.Compose, optional
+            Transformation to apply to image modalities, by default DEFAULT_TRANSOFRMATION
+        crop_transformation : torchvision.transforms.Compose, optional
+            Additional custom crop transformation to apply to image modalities, by default None
+        train_percentage : float, optional
+            Percentage of training images , by default 0.6
+        validation_percentage : float, optional
+            Percentage of validation images , by default 0.2
+        test_percentage : float, optional
+            Percentage of test images , by default 0.2
+        nb_max_samples : int, optional
+            Maximum number of samples in the dataset, by default None
+        """
+        super().__init__(path, mode, class_names, modalities, transformation, crop_transformation, train_percentage, validation_percentage, test_percentage, nb_max_samples)
+
+    def __str__(self):
+        return (f"RGBDObjectDataset_Unsupervised_Contrast_bis(path={self.path}, mode={self.mode}, class_names={self.class_names}, modalities={self.modalities}, "
+                f"transformation={self.transformation}, crop_transformation={self.crop_transformation}, "
+                f"train_percentage={self.train_percentage}, validation_percentage={self.validation_percentage}, test_percentage={self.test_percentage}, nb_max_samples={self.nb_max_samples})")
+        
+    def __getitem__(self, p_idx_1):
+
+        # Load positive data 1
+        p_class = "_".join(self.x[p_idx_1].split("_")[:-3])
+        p_subclass_1 = "_".join(self.x[p_idx_1].split("_")[:-2])
+        p_data_path_1 = os.path.join(self.path,
+                                     p_class,
+                                     p_subclass_1,
+                                     self.x[p_idx_1])
+        p_data_1 = self._load_item_data(p_idx_1, p_data_path_1)
+        
+        # Load negative data
+        n_idx = random.randint(0, len(self) - 1)
+        while self.x[n_idx].startswith(p_class):
+            n_idx = random.randint(0, len(self) - 1)
+        n_class = "_".join(self.x[n_idx].split("_")[:-3])
+        n_subclass = "_".join(self.x[n_idx].split("_")[:-2])
+        n_data_path = os.path.join(self.path,
+                                   n_class,
+                                   n_subclass,
+                                   self.x[n_idx])        
+        n_data = self._load_item_data(n_idx, n_data_path)
+
+        return [p_data_1, n_data]

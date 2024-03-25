@@ -29,20 +29,17 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, device):
         optimizer.zero_grad()
 
         # Make predictions for batch
-        flattened = torch.flatten(data[-1,:])
-        output = model(flattened.double())
+        data = data.unsqueeze(1)
+        output = model(data.double())
 
         # Update accuracy variables
-        _, predicted = torch.max(output.data, 0)
+        _, predicted = torch.max(output.data, dim=1)
+
         total += len(label)
-        print(predicted, label)
         batch_correct = (predicted == label).sum().item()
         correct += batch_correct
 
         # Compute loss
-        print('output :', output, ' Shape : ', output.shape)
-        print('label :', label, ' Shape : ', label.shape)
-        exit(0)
         loss = loss_function(output, label)
 
         # Compute gradient loss
@@ -88,12 +85,15 @@ def evaluate(model, data_loader, loss_function, device):
             label = label.to(device)
 
             # Make predictions for batch
-            output = model(data)
+            data = data.unsqueeze(1)
+            output = model(data.double())
 
             # Update accuracy variables
-            _, predicted = torch.max(output.data, 1)
+            _, predicted = torch.max(output.data, dim=1)
+
             total += len(label)
-            correct = (predicted == label).sum().item()
+            batch_correct = (predicted == label).sum().item()
+            correct += batch_correct
 
             # Compute loss
             loss = loss_function(output, label)
@@ -196,12 +196,15 @@ def test(model, test_data_loader, device=torch.device("cpu")):
             label = label.to(device)
 
             # Make predictions for batch
-            output = model(data)
+            data = data.unsqueeze(1)
+            output = model(data.double())
 
             # Update accuracy variables
-            _, predicted = torch.max(output.data, 1)
+            _, predicted = torch.max(output.data, dim=1)
+
             total += len(label)
-            correct += (predicted == label).sum().item()
+            batch_correct = (predicted == label).sum().item()
+            correct += batch_correct
 
             # Update confusion matrix variables
             if all_label is None and all_predicted is None:

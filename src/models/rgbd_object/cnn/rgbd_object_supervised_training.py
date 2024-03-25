@@ -8,10 +8,10 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 import torchview
 
-from ...setup import setup_python, setup_pytorch
-from ...plot import plot_summary
-from ...transformation import RandomCrop, ObjectCrop
-from ...dataset import RGBDObjectDataset
+from ....setup import setup_python, setup_pytorch
+from ....plot import plot_summary
+from ....transformation import RandomCrop, ObjectCrop
+from ....dataset import RGBDObjectDataset
 from .cnn import TestCNN
 from .train import train, test
 
@@ -46,7 +46,7 @@ def rgbd_object_cnn_supervised_training():
     LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
     OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
 
-    EPOCHS = [1]          # Number of epochs
+    EPOCHS = [1]             # Number of epochs
     LEARNING_RATES = [0.001] # Learning rates
     
     EARLY_STOPPING = False # Early stopping
@@ -64,7 +64,7 @@ def rgbd_object_cnn_supervised_training():
                                       modalities=MODALITIES,
                                       transformation=TRANSFORMATION,
                                       crop_transformation=CROP_TRANSFORMATION,
-                                      nb_samples=NB_MAX_TRAIN_SAMPLES)
+                                      nb_max_samples=NB_MAX_TRAIN_SAMPLES)
     
     print("## Validation Dataset ##")
     validation_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
@@ -72,7 +72,7 @@ def rgbd_object_cnn_supervised_training():
                                            modalities=MODALITIES,
                                            transformation=TRANSFORMATION,
                                            crop_transformation=CROP_TRANSFORMATION,
-                                           nb_samples=NB_MAX_VALIDATION_SAMPLES)
+                                           nb_max_samples=NB_MAX_VALIDATION_SAMPLES)
     
     print("## Test Dataset ##")
     test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
@@ -80,7 +80,7 @@ def rgbd_object_cnn_supervised_training():
                                      modalities=MODALITIES,
                                      transformation=TRANSFORMATION,
                                      crop_transformation=CROP_TRANSFORMATION,
-                                     nb_samples=NB_MAX_TEST_SAMPLES)
+                                     nb_max_samples=NB_MAX_TEST_SAMPLES)
     
     print(f"Train dataset -> {len(train_dataset)} samples")
     print(f"Validation dataset -> {len(validation_dataset)} samples")
@@ -158,6 +158,7 @@ def rgbd_object_cnn_supervised_training():
                  train_acc, train_loss,
                  val_acc, val_loss,
                  test_acc, test_confusion_matrix,
+                 None, None, None,
                  os.path.join(results_dir, results_file + "_res.png"))
 
     # Plot model architecture
