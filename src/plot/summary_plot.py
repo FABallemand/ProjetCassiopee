@@ -1,3 +1,4 @@
+import os
 import numpy as np
 
 import seaborn as sns
@@ -6,20 +7,29 @@ import matplotlib.pyplot as plt
 from .metric_plot import plot_loss, plot_accuracy
 from .tsne_plot import plot_tsne_2d, plot_tsne_3d
 
-def plot_summary(dataset, input_size, classes, modalities,
-                 transformation, crop_transformation,
-                 nb_train_samples, nb_validation_samples, nb_test_samples,
-                 batch_size, shuffle, drop_last,
-                 device, model, debug,
-                 loss_function, optimizer_type,
-                 epochs, learning_rates,
-                 early_stopping, patience, min_delta,
-                 start_timestamp, stop_timestamp, run_epochs,
-                 train_accuracies, train_losses,
-                 validation_accuracies, validation_losses,
-                 test_accuracy, test_confusion_matrix,
-                 tsne_results_2d=None, tsne_results_3d=None, labels=None,
-                 path="summary_plot.png"):
+def epoch_plot(epoch,
+               results_dir):
+    # Create figure
+    fig, axs = plt.subplots(2, 2, figsize=(20, 20))
+
+    #TODO: plot things here...
+
+    plt.savefig(os.path.join(results_dir, f"epoch_{epoch}_results.png"))
+
+def final_plot(dataset, input_size, classes, modalities,
+               transformation, crop_transformation,
+               nb_train_samples, nb_validation_samples, nb_test_samples,
+               batch_size, shuffle, drop_last,
+               device, model, debug,
+               loss_function, optimizer_type,
+               epochs, learning_rates,
+               early_stopping, patience, min_delta,
+               start_timestamp, stop_timestamp, run_epochs,
+               train_accuracies, train_losses,
+               validation_accuracies, validation_losses,
+               test_accuracy, test_confusion_matrix,
+               tsne_results_2d=None, tsne_results_3d=None, labels=None,
+               results_dir="test"):
     # Create figure
     tsne_flag = tsne_results_2d is not None or tsne_results_3d is not None
     nb_rows = 4 if tsne_flag else 3
@@ -89,4 +99,4 @@ def plot_summary(dataset, input_size, classes, modalities,
         axs[3, 1] = fig.add_subplot(4, 2, 8, projection="3d")
         plot_tsne_2d(axs[3, 1], tsne_results_2d, labels)
 
-    plt.savefig(path)
+    plt.savefig(os.path.join(results_dir, "final_results.png"))
