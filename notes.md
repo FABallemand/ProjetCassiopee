@@ -22,7 +22,7 @@ scp -r /path/to/local/dir user@remotehost:/path/to/remote/dir
 # Download Google Drive folder/file
 gdown --folder link/to/folder -O /path/to/dir
 
-nohup python3 main.py &
+nohup python3 -u main.py &
 
 # https://stackoverflow.com/questions/17385794/how-to-get-the-process-id-to-kill-a-nohup-process
 
@@ -56,3 +56,4 @@ Recognition](https://openaccess.thecvf.com/content_CVPR_2019/papers/Shi_Two-Stre
 ## 📋 ToDo
 - Add cache files for datasets
 - Adjust TSNE perplexity (depending of the number of samples)
+- Log confusion matrix during training

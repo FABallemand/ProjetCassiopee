@@ -1,10 +1,13 @@
+import os
+import logging
 import torch
+from torcheval.metrics.functional import multiclass_f1_score
 from sklearn.metrics import confusion_matrix
 
 from ....train import create_optimizer
 
 
-def train_one_epoch(model, data_loader, loss_function, optimizer, device):
+def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, results_dir, device):
 
     # Enable training
     model.train(True)
@@ -55,9 +58,13 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, device):
         # Log
         if i % 10 == 0:
             # Batch loss
-            print(f"    Batch {i:8}: accuracy={batch_correct / label.size(0):.4f} | loss={loss:.4f}")
+            logging.info(f"    Batch {i:8}/{len(data_loader)}: accuracy={batch_correct / label.size(0):.4f} | loss={loss:.4f}")
 
-    # Compute validation accuracy and loss
+        # Save model
+        if i % 1000 == 0 and i != 0:
+            torch.save(model.state_dict(), os.path.join(results_dir, f"weights_epoch_{epoch}_batch_{i}"))
+
+    # Compute train accuracy and loss
     train_accuracy = correct / total
     train_loss /= (i + 1) # Average loss over all batches of the epoch
     
@@ -122,6 +129,7 @@ def train(
         patience=5,
         min_delta=1e-3,
         device=torch.device("cpu"),
+        results_dir="test",
         debug=False):
 
     # Accuracies
@@ -143,34 +151,37 @@ def train(
         # Create optimizer
         optimizer = create_optimizer(optimizer_type, model, learning_rate, momentum=0.6)
 
-        for epoch in range(epochs):
-            print(f"#### EPOCH {epoch} ####")
+        for epoch in range(1, epochs + 1):
+            logging.info(f"#### EPOCH {epoch:4}/{epochs} ####")
             
             # Train for one epoch
             if debug:
                 with torch.autograd.detect_anomaly():
-                    train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
+                    train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, epoch, results_dir, device)
                     train_accuracies.append(train_accuracy)
                     train_losses.append(train_loss)
             else:
-                train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
+                train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, epoch, results_dir, device)
                 train_accuracies.append(train_accuracy)
                 train_losses.append(train_loss)
+
+            # Save model
+            torch.save(model.state_dict(), os.path.join(results_dir, f"weights_epoch_{epoch}"))
 
             # Evaluate model
             validation_accuracy, validation_loss = evaluate(model, validation_data_loader, loss_function, device)
             validation_accuracies.append(validation_accuracy)
             validation_losses.append(validation_loss)
 
-            print(f"Train:      accuracy={train_accuracy:.8f} | loss={train_loss:.8f}")
-            print(f"Validation: accuracy={validation_accuracy:.8f} | loss={validation_loss:.8f}")
+            logging.info(f"Train:      accuracy={train_accuracy:.8f}      | loss={train_loss:.8f}")
+            logging.info(f"Validation: accuracy={validation_accuracy:.8f} | loss={validation_loss:.8f}")
 
             # Early stopping
             if early_stopping:
                 if epoch > 0 and abs(validation_losses[epoch - 1] - validation_losses[epoch]) < min_delta:
                     counter += 1
                     if counter >= patience:
-                        print("==== Early Stopping ====")
+                        logging.info("==== Early Stopping ====")
                         break
                 else:
                     counter = 0
@@ -219,8 +230,14 @@ def test(model, test_data_loader, device=torch.device("cpu")):
             
     # Compute test accuracy
     test_accuracy = correct / total
+    logging.info(f"Test:       accuracy={test_accuracy:.8f}")
+
+    # Compute f1 score
+    print(torch.unique(all_label).shape[0])
+    test_f1_score = multiclass_f1_score(all_predicted, all_label, num_classes=torch.unique(all_label).shape[0])
+    logging.info(f"Test:       f1_score={test_f1_score:.8f}")
 
     # Create "confusion matrix"
     test_confusion_matrix = confusion_matrix(all_label.cpu(), all_predicted.cpu())
 
-    return test_accuracy, test_confusion_matrix
+    return test_accuracy, test_f1_score, test_confusion_matrix

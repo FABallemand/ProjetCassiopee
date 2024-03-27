@@ -1,13 +1,22 @@
-artemis/
-data/
-!data/*/test.ipynb
-train_results/
+# Configuration
+artemis/*
+
+# Results
+*.png
+*.gif
 *.ckpt
+/train_results/*
+!/train_results/**/*.ipynb
+
+# Logging
 nohup.out
+*.log
 
 # Data
 *.tar
 *.zip
+/data/*
+!/data/**/*.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

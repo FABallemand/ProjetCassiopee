@@ -1,6 +1,7 @@
 import os
 import sys
 from datetime import datetime
+import logging
 import numpy as np
 
 import torch
@@ -8,18 +9,32 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 import torchview
 
+from torchvision.models import resnet18, ResNet18_Weights
+
 from ....setup import setup_python, setup_pytorch
-from ....plot import plot_summary
+# from ....plot import final_plot
 from ....transformation import RandomCrop, ObjectCrop
 from ....dataset import RGBDObjectDataset
-from .cnn import TestCNN
+from .cnn import TestCNN, TestSmallerCNN
 from .train import train, test
 
 
 def rgbd_object_cnn_supervised_training():
 
+    # Save training time start
+    start_timestamp = datetime.now()
+
+    # Create path for saving things...
+    results_dir = f"train_results/rgbd_object/supervised/cnn_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
+    os.mkdir(results_dir)
+
+    # Configure logging
+    FORMAT = '%(message)s'
+    logging.basicConfig(filename=os.path.join(results_dir, "training.log"),
+                        level=logging.DEBUG, format=FORMAT)
+
     # Begin set-up
-    print("#### Set-Up ####")
+    logging.info("#### Set-Up ####")
 
     # Set-up Python
     setup_python()
@@ -39,14 +54,14 @@ def rgbd_object_cnn_supervised_training():
     NB_MAX_TEST_SAMPLES = None
 
     # Training parameters
-    BATCH_SIZE = 64   # Batch size
+    BATCH_SIZE = 10   # Batch size
     SHUFFLE = True    # Shuffle
     DROP_LAST = False # Drop last batch
 
     LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
     OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
 
-    EPOCHS = [1]             # Number of epochs
+    EPOCHS = [10]            # Number of epochs
     LEARNING_RATES = [0.001] # Learning rates
     
     EARLY_STOPPING = False # Early stopping
@@ -56,71 +71,91 @@ def rgbd_object_cnn_supervised_training():
     DEBUG = False # Debug flag
     
     # Datasets
-    print("#### Datasets ####")
+    logging.info("#### Datasets ####")
+
+    logging.info(f"INPUT_SIZE = {INPUT_SIZE}")
+    logging.info(f"MODALITIES = {MODALITIES}")
+    logging.info(f"TRANSFORMATION = {TRANSFORMATION}")
+    logging.info(f"CROP_TRANSFORMATION = {CROP_TRANSFORMATION}")
+    logging.info(f"NB_MAX_TRAIN_SAMPLES = {NB_MAX_TRAIN_SAMPLES}")
+    logging.info(f"NB_MAX_VALIDATION_SAMPLES = {NB_MAX_VALIDATION_SAMPLES}")
+    logging.info(f"NB_MAX_TEST_SAMPLES = {NB_MAX_TEST_SAMPLES}")
     
-    print("## Train Dataset ##")
+    logging.info("## Train Dataset ##")
     train_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
                                       mode="train",
                                       modalities=MODALITIES,
                                       transformation=TRANSFORMATION,
                                       crop_transformation=CROP_TRANSFORMATION,
                                       nb_max_samples=NB_MAX_TRAIN_SAMPLES)
+    logging.info(f"{len(train_dataset)} samples")
     
-    print("## Validation Dataset ##")
+    logging.info("## Validation Dataset ##")
     validation_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
                                            mode="validation",
                                            modalities=MODALITIES,
                                            transformation=TRANSFORMATION,
                                            crop_transformation=CROP_TRANSFORMATION,
                                            nb_max_samples=NB_MAX_VALIDATION_SAMPLES)
+    logging.info(f"{len(validation_dataset)} samples")
     
-    print("## Test Dataset ##")
+    logging.info("## Test Dataset ##")
     test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
                                      mode="test",
                                      modalities=MODALITIES,
                                      transformation=TRANSFORMATION,
                                      crop_transformation=CROP_TRANSFORMATION,
                                      nb_max_samples=NB_MAX_TEST_SAMPLES)
-    
-    print(f"Train dataset -> {len(train_dataset)} samples")
-    print(f"Validation dataset -> {len(validation_dataset)} samples")
-    print(f"Test dataset -> {len(test_dataset)} samples")
+    logging.info(f"{len(test_dataset)} samples")
     
     # Data loaders
-    print("#### Data Loaders ####")
+    logging.info("#### Data Loaders ####")
 
-    print("## Train Data Loader ##")
+    logging.info(f"BATCH_SIZE = {BATCH_SIZE}")
+    logging.info(f"SHUFFLE = {SHUFFLE}")
+    logging.info(f"DROP_LAST = {DROP_LAST}")
+
+    logging.info("## Train Data Loader ##")
     train_data_loader = DataLoader(train_dataset,
                                    batch_size=BATCH_SIZE,
                                    shuffle=SHUFFLE,
                                    drop_last=DROP_LAST)
     
-    print("## Validation Data Loader ##")
+    logging.info("## Validation Data Loader ##")
     validation_data_loader = DataLoader(validation_dataset,
                                         batch_size=BATCH_SIZE,
                                         shuffle=SHUFFLE,
                                         drop_last=DROP_LAST)
     
-    print("## Test Data Loader ##")
+    logging.info("## Test Data Loader ##")
     test_data_loader = DataLoader(test_dataset,
                                   batch_size=BATCH_SIZE,
                                   shuffle=SHUFFLE,
                                   drop_last=DROP_LAST)
     
-    # Create neural network
-    print("#### Model ####")
+    # Neural network
+    logging.info("#### Model ####")
 
-    model = TestCNN(nb_classes=len(train_dataset.class_dict)).to(DEVICE)
+    logging.info(f"LOSS_FUNCTION = {LOSS_FUNCTION}")
+    logging.info(f"OPTIMIZER_TYPE = {OPTIMIZER_TYPE}")
+    logging.info(f"EPOCHS = {EPOCHS}")
+    logging.info(f"LEARNING_RATES = {LEARNING_RATES}")
+    logging.info(f"EARLY_STOPPING = {EARLY_STOPPING}")
+    logging.info(f"PATIENCE = {PATIENCE}")
+    logging.info(f"MIN_DELTA = {MIN_DELTA}")
+    logging.info(f"DEBUG = {DEBUG}")
 
-    # Save training time start
-    start_timestamp = datetime.now()
+    # model = TestCNN(nb_classes=len(train_dataset.class_dict)).to(DEVICE)
+    # model = TestSmallerCNN(nb_classes=len(train_dataset.class_dict)).to(DEVICE)
 
-    # Create path for saving things...
-    results_dir = f"train_results/supervised"
-    results_file = f"rgbd_object_cnn_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
+    model = resnet18(weights=ResNet18_Weights.DEFAULT)
+    model.fc = torch.nn.Linear(512, len(train_dataset.class_dict), bias=True)
+    model = model.to(DEVICE)
 
-    # Begin training
-    print("#### Training ####")
+    logging.info(model)
+
+    # Training
+    logging.info("#### Training ####")
 
     # Train model
     train_acc, train_loss, val_acc, val_loss, run_epochs = train(model,
@@ -134,36 +169,17 @@ def rgbd_object_cnn_supervised_training():
                                                                  PATIENCE,
                                                                  MIN_DELTA,
                                                                  DEVICE,
+                                                                 results_dir,
                                                                  DEBUG)
     
     # Save training time stop
     stop_timestamp = datetime.now()
     
+    # Testing
+    logging.info("#### Testing ####")
+
     # Test model
-    test_acc, test_confusion_matrix = test(model, test_data_loader, DEVICE)
-
-    # Save model
-    torch.save(model.state_dict(), os.path.join(results_dir, results_file))
-
-    # Plot results
-    plot_summary(type(train_dataset).__name__, INPUT_SIZE, None, MODALITIES,
-                 type(TRANSFORMATION).__name__, type(CROP_TRANSFORMATION).__name__,
-                 len(train_dataset), len(validation_dataset), len(test_dataset),
-                 BATCH_SIZE, SHUFFLE, DROP_LAST,
-                 DEVICE, type(model).__name__, DEBUG,
-                 LOSS_FUNCTION, OPTIMIZER_TYPE,
-                 EPOCHS, LEARNING_RATES,
-                 EARLY_STOPPING, PATIENCE, MIN_DELTA,
-                 start_timestamp, stop_timestamp, run_epochs,
-                 train_acc, train_loss,
-                 val_acc, val_loss,
-                 test_acc, test_confusion_matrix,
-                 None, None, None,
-                 os.path.join(results_dir, results_file + "_res.png"))
-
-    # Plot model architecture
-    graph = torchview.draw_graph(model, input_size=(BATCH_SIZE, 3, INPUT_SIZE[0], INPUT_SIZE[1]), device=DEVICE,
-                                 save_graph=True, filename=results_file + "_arc", directory=results_dir)
+    test_acc, test_f1_score, test_confusion_matrix = test(model, test_data_loader, DEVICE)
     
     # End training
-    print("#### End ####")
+    logging.info("#### End ####")
