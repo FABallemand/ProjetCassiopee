@@ -5,8 +5,8 @@ artemis/*
 *.png
 *.gif
 *.ckpt
-/train_results/*
-!/train_results/**/*.ipynb
+train_results/*
+!train_results/**/*.ipynb
 
 # Logging
 nohup.out
@@ -15,8 +15,8 @@ nohup.out
 # Data
 *.tar
 *.zip
-/data/*
-!/data/**/*.ipynb
+data/*
+!data/**/*.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

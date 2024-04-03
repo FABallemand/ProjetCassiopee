@@ -20,7 +20,8 @@ class RGBDObjectDataset(Dataset):
 
     def __init__(self, path, mode, class_names=None, modalities=["rgb"],
                  transformation=DEFAULT_TRANSOFRMATION, crop_transformation=None,
-                 train_percentage=0.6, validation_percentage=0.2, test_percentage=0.2, nb_max_samples=None):
+                 train_percentage=0.6, validation_percentage=0.2, test_percentage=0.2, nb_max_samples=None,
+                 debug=False):
         """
         Initialise RGBDObjectDataset instance.
 
@@ -46,9 +47,13 @@ class RGBDObjectDataset(Dataset):
             Percentage of test images , by default 0.2
         nb_max_samples : int, optional
             Maximum number of samples in the dataset, by default None
+        debug : bool
+            Debug flag for verbose mode, by default False 
         """
         super().__init__()
         self.path = path
+
+        self.debug = debug
 
         self.mode = mode
         self.modalities = modalities
@@ -113,22 +118,22 @@ class RGBDObjectDataset(Dataset):
                 if self.depth_flag:
                     for sample in data:
                         if (sample + "_depth") not in all_files:
-                            print(f"Missing depth data for {sample}")
-                            # data.remove(sample)
+                            if self.debug:
+                                print(f"Missing depth data for {sample}")
                             data = list(filter(lambda s: s != sample, data))
                             self.removed.append(sample)
                 if self.mask_flag:
                     for sample in data:
                         if (sample + "_mask") not in all_files:
-                            print(f"Missing mask data for {sample}")
-                            # data.remove(sample)
+                            if self.debug:
+                                print(f"Missing mask data for {sample}")
                             data = list(filter(lambda s: s != sample, data))
                             self.removed.append(sample)
                 if self.loc_flag:
                     for sample in data:
                         if (sample + "_loc") not in all_files:
-                            print(f"Missing localisation data for {sample}")
-                            # data.remove(sample)
+                            if self.debug:
+                                print(f"Missing localisation data for {sample}")
                             data = list(filter(lambda s: s != sample, data))
                             self.removed.append(sample)
 

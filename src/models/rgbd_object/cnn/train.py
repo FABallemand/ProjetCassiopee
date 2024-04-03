@@ -1,8 +1,6 @@
 import os
 import logging
 import torch
-from torcheval.metrics.functional import multiclass_f1_score
-from sklearn.metrics import confusion_matrix
 
 from ....train import create_optimizer
 
@@ -160,6 +158,11 @@ def train(
                     train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, epoch, results_dir, device)
                     train_accuracies.append(train_accuracy)
                     train_losses.append(train_loss)
+
+                    # Print gradients for each parameter
+                    for name, param in model.named_parameters():
+                        if param.grad is not None:
+                            logging.debug(f'{name}.grad: mean={param.grad.mean()} | std={param.grad.std()}')
             else:
                 train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, epoch, results_dir, device)
                 train_accuracies.append(train_accuracy)
@@ -196,7 +199,7 @@ def test(model, test_data_loader, device=torch.device("cpu")):
     correct = 0
     total = 0
 
-    # Confusion matrix variables
+    # Variables
     all_label = None
     all_predicted = None
 
@@ -232,12 +235,4 @@ def test(model, test_data_loader, device=torch.device("cpu")):
     test_accuracy = correct / total
     logging.info(f"Test:       accuracy={test_accuracy:.8f}")
 
-    # Compute f1 score
-    print(torch.unique(all_label).shape[0])
-    test_f1_score = multiclass_f1_score(all_predicted, all_label, num_classes=torch.unique(all_label).shape[0])
-    logging.info(f"Test:       f1_score={test_f1_score:.8f}")
-
-    # Create "confusion matrix"
-    test_confusion_matrix = confusion_matrix(all_label.cpu(), all_predicted.cpu())
-
-    return test_accuracy, test_f1_score, test_confusion_matrix
+    return all_label.cpu(), all_predicted.cpu()

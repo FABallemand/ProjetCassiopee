@@ -2,7 +2,6 @@ import os
 import sys
 from datetime import datetime
 import logging
-import numpy as np
 
 import torch
 from torch.utils.data import DataLoader
@@ -12,7 +11,6 @@ import torchview
 from torchvision.models import resnet18, ResNet18_Weights
 
 from ....setup import setup_python, setup_pytorch
-# from ....plot import final_plot
 from ....transformation import RandomCrop, ObjectCrop
 from ....dataset import RGBDObjectDataset
 from .cnn import TestCNN, TestSmallerCNN
@@ -29,7 +27,7 @@ def rgbd_object_cnn_supervised_training():
     os.mkdir(results_dir)
 
     # Configure logging
-    FORMAT = '%(message)s'
+    FORMAT = '%(asctime)s %(message)s'
     logging.basicConfig(filename=os.path.join(results_dir, "training.log"),
                         level=logging.DEBUG, format=FORMAT)
 
@@ -146,11 +144,11 @@ def rgbd_object_cnn_supervised_training():
     logging.info(f"DEBUG = {DEBUG}")
 
     # model = TestCNN(nb_classes=len(train_dataset.class_dict)).to(DEVICE)
-    # model = TestSmallerCNN(nb_classes=len(train_dataset.class_dict)).to(DEVICE)
+    model = TestSmallerCNN(nb_classes=len(train_dataset.class_dict)).to(DEVICE)
 
-    model = resnet18(weights=ResNet18_Weights.DEFAULT)
-    model.fc = torch.nn.Linear(512, len(train_dataset.class_dict), bias=True)
-    model = model.to(DEVICE)
+    # model = resnet18(weights=ResNet18_Weights.DEFAULT)
+    # model.fc = torch.nn.Linear(512, len(train_dataset.class_dict), bias=True)
+    # model = model.to(DEVICE)
 
     logging.info(model)
 
@@ -179,7 +177,7 @@ def rgbd_object_cnn_supervised_training():
     logging.info("#### Testing ####")
 
     # Test model
-    test_acc, test_f1_score, test_confusion_matrix = test(model, test_data_loader, DEVICE)
+    all_labels, all_predicted = test(model, test_data_loader, DEVICE)
     
     # End training
     logging.info("#### End ####")
