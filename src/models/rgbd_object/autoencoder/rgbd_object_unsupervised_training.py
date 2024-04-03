@@ -1,23 +1,38 @@
 import os
+import sys
 from datetime import datetime
+import logging
 
 import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
 import torchview
 
-from ....setup import setup_python, setup_pytorch
-from ....plot import plot_summary
-from ....transformation import RandomCrop, ObjectCrop
-from ....dataset import RGBDObjectDataset
-from .autoencoder import TestAutoencoder
-from .train import train, test
+sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee")
+from src.setup import setup_python, setup_pytorch
+from src.plot import final_plot
+from src.transformation import RandomCrop, ObjectCrop
+from src.dataset import RGBDObjectDataset
+from src.models.rgbd_object.autoencoder.autoencoder import TestAutoencoder, TestAutoencoder_skip, ResNetAutoencoder
+from src.models.rgbd_object.autoencoder.train import train, test
 
 
 def rgbd_object_ae_unsupervised_training():
 
+    # Save training time start
+    start_timestamp = datetime.now()
+
+    # Create path for saving things...
+    results_dir = f"train_results/rgbd_object/unsupervised/ae_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
+    os.mkdir(results_dir)
+
+    # Configure logging
+    FORMAT = '%(asctime)s %(message)s'
+    logging.basicConfig(filename=os.path.join(results_dir, "training.log"),
+                        level=logging.DEBUG, format=FORMAT)
+
     # Begin set-up
-    print("#### Set-Up ####")
+    logging.info("#### Set-Up ####")
 
     # Set-up Python
     setup_python()
@@ -37,15 +52,15 @@ def rgbd_object_ae_unsupervised_training():
     NB_MAX_TEST_SAMPLES = None
 
     # Training parameters
-    BATCH_SIZE = 64   # Batch size
+    BATCH_SIZE = 5   # Batch size
     SHUFFLE = True    # Shuffle
     DROP_LAST = False # Drop last batch
 
     LOSS_FUNCTION = torch.nn.MSELoss() # Loss function
     OPTIMIZER_TYPE = "SGD"             # Type of optimizer
 
-    EPOCHS = [1]            # Number of epochs
-    LEARNING_RATES = [0.01] # Learning rates
+    EPOCHS = [10]            # Number of epochs
+    LEARNING_RATES = [0.001] # Learning rates
     
     EARLY_STOPPING = False # Early stopping
     PATIENCE = 10          # Early stopping patience
@@ -54,71 +69,88 @@ def rgbd_object_ae_unsupervised_training():
     DEBUG = False # Debug flag
     
     # Datasets
-    print("#### Datasets ####")
+    logging.info("#### Datasets ####")
+
+    logging.info(f"INPUT_SIZE = {INPUT_SIZE}")
+    logging.info(f"MODALITIES = {MODALITIES}")
+    logging.info(f"TRANSFORMATION = {TRANSFORMATION}")
+    logging.info(f"CROP_TRANSFORMATION = {CROP_TRANSFORMATION}")
+    logging.info(f"NB_MAX_TRAIN_SAMPLES = {NB_MAX_TRAIN_SAMPLES}")
+    logging.info(f"NB_MAX_VALIDATION_SAMPLES = {NB_MAX_VALIDATION_SAMPLES}")
+    logging.info(f"NB_MAX_TEST_SAMPLES = {NB_MAX_TEST_SAMPLES}")
     
-    print("## Train Dataset ##")
+    logging.info("## Train Dataset ##")
     train_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
                                       mode="train",
                                       modalities=MODALITIES,
                                       transformation=TRANSFORMATION,
                                       crop_transformation=CROP_TRANSFORMATION,
                                       nb_max_samples=NB_MAX_TRAIN_SAMPLES)
-    
-    print("## Validation Dataset ##")
+    logging.info(f"{len(train_dataset)} samples")
+
+    logging.info("## Validation Dataset ##")
     validation_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
                                            mode="validation",
                                            modalities=MODALITIES,
                                            transformation=TRANSFORMATION,
                                            crop_transformation=CROP_TRANSFORMATION,
                                            nb_max_samples=NB_MAX_VALIDATION_SAMPLES)
-    
-    print("## Test Dataset ##")
+    logging.info(f"{len(validation_dataset)} samples")
+
+    logging.info("## Test Dataset ##")
     test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
                                      mode="test",
                                      modalities=MODALITIES,
                                      transformation=TRANSFORMATION,
                                      crop_transformation=CROP_TRANSFORMATION,
                                      nb_max_samples=NB_MAX_TEST_SAMPLES)
-    
-    print(f"Train dataset -> {len(train_dataset)} samples")
-    print(f"Validation dataset -> {len(validation_dataset)} samples")
-    print(f"Test dataset -> {len(test_dataset)} samples")
+    logging.info(f"{len(test_dataset)} samples")
     
     # Data loaders
-    print("#### Data Loaders ####")
+    logging.info("#### Data Loaders ####")
 
-    print("## Train Data Loader ##")
+    logging.info(f"BATCH_SIZE = {BATCH_SIZE}")
+    logging.info(f"SHUFFLE = {SHUFFLE}")
+    logging.info(f"DROP_LAST = {DROP_LAST}")
+
+    logging.info("## Train Data Loader ##")
     train_data_loader = DataLoader(train_dataset,
                                    batch_size=BATCH_SIZE,
                                    shuffle=SHUFFLE,
                                    drop_last=DROP_LAST)
     
-    print("## Validation Data Loader ##")
+    logging.info("## Validation Data Loader ##")
     validation_data_loader = DataLoader(validation_dataset,
                                         batch_size=BATCH_SIZE,
                                         shuffle=SHUFFLE,
                                         drop_last=DROP_LAST)
     
-    print("## Test Data Loader ##")
+    logging.info("## Test Data Loader ##")
     test_data_loader = DataLoader(test_dataset,
                                   batch_size=BATCH_SIZE,
                                   shuffle=SHUFFLE,
                                   drop_last=DROP_LAST)
     
-    # Create neural network
-    print("#### Model ####")
+    # Neural network
+    logging.info("#### Model ####")
 
-    model = TestAutoencoder().to(DEVICE)
+    logging.info(f"LOSS_FUNCTION = {LOSS_FUNCTION}")
+    logging.info(f"OPTIMIZER_TYPE = {OPTIMIZER_TYPE}")
+    logging.info(f"EPOCHS = {EPOCHS}")
+    logging.info(f"LEARNING_RATES = {LEARNING_RATES}")
+    logging.info(f"EARLY_STOPPING = {EARLY_STOPPING}")
+    logging.info(f"PATIENCE = {PATIENCE}")
+    logging.info(f"MIN_DELTA = {MIN_DELTA}")
+    logging.info(f"DEBUG = {DEBUG}")
 
-    # Save training time start
-    start_timestamp = datetime.now()
+    # model = TestAutoencoder().to(DEVICE)
+    # model = TestAutoencoder_skip().to(DEVICE)
+    model = ResNetAutoencoder().to(DEVICE)
 
-    # Create path for saving things...
-    results_dir = f"train_results/unsupervised"
-    results_file = f"rgbd_object_ae_{start_timestamp.strftime('%Y%m%d_%H%M%S')}"
+    logging.info(model)
 
-    # Begin training
-    print("#### Training ####")
+    # Training
+    logging.info("#### Training ####")
 
     # Train model
     train_loss, val_loss, run_epochs = train(model,
@@ -132,36 +164,17 @@ def rgbd_object_ae_unsupervised_training():
                                              PATIENCE,
                                              MIN_DELTA,
                                              DEVICE,
+                                             results_dir,
                                              DEBUG)
     
     # Save training time stop
     stop_timestamp = datetime.now()
     
+    # Testing
+    logging.info("#### Testing ####")
+
     # Test model
-    tsne_results_2d, tsne_results_3d, labels = test(model, test_data_loader, None, True, DEVICE)
-
-    # Save model
-    torch.save(model.state_dict(), os.path.join(results_dir, results_file))
-
-    # Plot results
-    plot_summary(type(train_dataset).__name__, INPUT_SIZE, None, MODALITIES,
-                 type(TRANSFORMATION).__name__, type(CROP_TRANSFORMATION).__name__,
-                 len(train_dataset), len(validation_dataset), len(test_dataset),
-                 BATCH_SIZE, SHUFFLE, DROP_LAST,
-                 DEVICE, type(model).__name__, DEBUG,
-                 LOSS_FUNCTION, OPTIMIZER_TYPE,
-                 EPOCHS, LEARNING_RATES,
-                 EARLY_STOPPING, PATIENCE, MIN_DELTA,
-                 start_timestamp, stop_timestamp, run_epochs,
-                 None, train_loss,
-                 None, val_loss,
-                 None, None,
-                 tsne_results_2d, tsne_results_3d, labels,
-                 os.path.join(results_dir, results_file + "_res.png"))
-    
-    # Plot model architecture
-    graph = torchview.draw_graph(model, input_size=(BATCH_SIZE, 3, INPUT_SIZE[0], INPUT_SIZE[1]), device=DEVICE,
-                                 save_graph=True, filename=results_file + "_arc", directory=results_dir)
+    tsne_results_2d, tsne_results_3d, labels_arr = test(model, test_data_loader, DEVICE)
     
     # End training
-    print("#### End ####")
+    logging.info("#### End ####")

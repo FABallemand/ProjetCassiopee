@@ -7,7 +7,7 @@ from torchvision import transforms
 import torchview
 
 from ....setup import setup_python, setup_pytorch
-from ....plot import plot_summary
+from ....plot import final_plot
 from ....transformation import RandomCrop, ObjectCrop
 from ....dataset import RGBDObjectDataset
 from .combined_model import CombinedModel
@@ -144,7 +144,7 @@ def rgbd_object_combined_supervised_training():
     torch.save(model.state_dict(), os.path.join(results_dir, results_file))
 
     # Plot results
-    plot_summary(type(train_dataset).__name__, INPUT_SIZE, None, MODALITIES,
+    final_plot(type(train_dataset).__name__, INPUT_SIZE, None, MODALITIES,
                  type(TRANSFORMATION).__name__, type(CROP_TRANSFORMATION).__name__,
                  len(train_dataset), len(validation_dataset), len(test_dataset),
                  BATCH_SIZE, SHUFFLE, DROP_LAST,
