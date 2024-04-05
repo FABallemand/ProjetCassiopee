@@ -13,5 +13,5 @@ def reconstruction_plot(img, reconstruction, n, path):
         axs[i,1].imshow(reconstruction[i].permute(1,2,0))
         axs[i,1].set_axis_off()
     
-    fig.set_tight_layout()
+    plt.tight_layout()
     plt.savefig(path)
