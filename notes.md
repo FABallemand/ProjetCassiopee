@@ -31,6 +31,9 @@ git config --local user.email "allemand.fabien@orange.fr"
 git clone https://github.com/FABallemand/ProjetCassiopee
 cd ProjetCassiopee
 
+# Download utility
+sudo apt install htop
+
 # Download data
 pip3 install gdown
 sudo apt-get install -y p7zip-full p7zip-rar

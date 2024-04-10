@@ -152,8 +152,10 @@ def rgbd_object_cnn_supervised_training():
     # model = TestSmallerCNN(nb_classes=len(train_dataset.class_dict)).to(DEVICE)
 
     model = resnet18(weights=ResNet18_Weights.DEFAULT)
-    for param in model.parameters():
-        param.requires_grad = False
+    logging.info(f"WEIGHT_FREEZING = False")
+    # logging.info(f"WEIGHT_FREEZING = True")
+    # for param in model.parameters():
+    #     param.requires_grad = False
     model.fc = torch.nn.Linear(512, len(train_dataset.class_dict), bias=True)
     model = model.to(DEVICE)
 

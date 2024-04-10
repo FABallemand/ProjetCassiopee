@@ -224,8 +224,8 @@ class ResNetAutoencoder(nn.Module) :
 
         # Encoder
         self.encoder = resnet18(weights=ResNet18_Weights.DEFAULT)
-        for param in self.encoder.parameters():
-            param.requires_grad = False
+        # for param in self.encoder.parameters():
+        #     param.requires_grad = False
         self.encoder.fc = torch.nn.Linear(512, 256)
         
         # Decoder
