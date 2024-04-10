@@ -34,5 +34,12 @@ def accuracy_plot(epochs, train_accuracy, validation_accuracy, run_epochs, path)
     plt.savefig(path)
 
 
+def loss_accuracy_plot(epochs, train_loss, train_accuracy, validation_loss, validation_accuracy, run_epochs, path):
+    fig, axs = plt.subplots(1, 2)
+    plot_loss(axs[0], epochs, train_loss, validation_loss, run_epochs)
+    plot_accuracy(axs[1], epochs, train_accuracy, validation_accuracy, run_epochs)
+    plt.savefig(path)
+
+
 def confusion_matrix_plot():
     pass

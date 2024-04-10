@@ -64,7 +64,7 @@ def rgbd_object_ae_unsupervised_training():
     
     EARLY_STOPPING = False # Early stopping
     PATIENCE = 10          # Early stopping patience
-    MIN_DELTA = 0.0001     # Early stopping minimum delta
+    MIN_DELTA = 0.0001     # Early stopping minimum deltaCwewKWRvMjQQdb5l
 
     DEBUG = False # Debug flag
     
@@ -117,19 +117,22 @@ def rgbd_object_ae_unsupervised_training():
     train_data_loader = DataLoader(train_dataset,
                                    batch_size=BATCH_SIZE,
                                    shuffle=SHUFFLE,
-                                   drop_last=DROP_LAST)
+                                   drop_last=DROP_LAST,
+                                   num_workers=4)
     
     logging.info("## Validation Data Loader ##")
     validation_data_loader = DataLoader(validation_dataset,
                                         batch_size=BATCH_SIZE,
                                         shuffle=SHUFFLE,
-                                        drop_last=DROP_LAST)
+                                        drop_last=DROP_LAST,
+                                        num_workers=4)
     
     logging.info("## Test Data Loader ##")
     test_data_loader = DataLoader(test_dataset,
                                   batch_size=BATCH_SIZE,
                                   shuffle=SHUFFLE,
-                                  drop_last=DROP_LAST)
+                                  drop_last=DROP_LAST,
+                                  num_workers=4)
     
     # Neural network
     logging.info("#### Model ####")

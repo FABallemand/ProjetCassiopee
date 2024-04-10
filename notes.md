@@ -50,10 +50,16 @@ tar -xzvf file.tar.gz
 ## 🧠 AI
 - [MMAction](https://github.com/open-mmlab/mmaction2)
 - [MMAction graph-based action recognition](https://github.com/open-mmlab/mmaction2/blob/main/configs/skeleton/2s-agcn/README.md)
-- [Two-Stream Adaptive Graph Convolutional Networks for Skeleton-Based Action
-Recognition](https://openaccess.thecvf.com/content_CVPR_2019/papers/Shi_Two-Stream_Adaptive_Graph_Convolutional_Networks_for_Skeleton-Based_Action_Recognition_CVPR_2019_paper.pdf)
+- [Two-Stream Adaptive Graph Convolutional Networks for Skeleton-Based Action Recognition](https://openaccess.thecvf.com/content_CVPR_2019/papers/Shi_Two-Stream_Adaptive_Graph_Convolutional_Networks_for_Skeleton-Based_Action_Recognition_CVPR_2019_paper.pdf)
 
 ## 📋 ToDo
 - Add cache files for datasets
 - Adjust TSNE perplexity (depending of the number of samples)
 - Log confusion matrix during training
+
+ 507583 no freezing
+ 507648 freezing
+
+ 514658
+
+ sudo reboot now

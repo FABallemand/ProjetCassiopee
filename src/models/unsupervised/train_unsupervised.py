@@ -10,12 +10,13 @@ import sklearn
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
-from src.models.combined_model.train_contrastive import contrastive_loss
+from src.loss.contrastive_loss import contrastive_loss
 from src.train import create_optimizer
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
 from torchvision.transforms.functional import to_pil_image
 import torchvision
+import torch.nn.functional as TF
 
 #Is used to create the transformed image for input 
 def image_augmentation(img, target_size):
@@ -38,30 +39,28 @@ def train_one_epoch(model, data_loader, optimizer, device):
     for i, batch in enumerate(data_loader):
 
         # Load and prepare batch
-        image1, image2 = batch
+        image1, image2, image3 = batch
 
         img1, p_depth_1, p_mask_1, p_loc_x_1, p_loc_y_1, p_label_1 = image1
         img2, p_depth_2, p_mask_2, p_loc_x_2, p_loc_y_2, p_label_2 = image2
-
-        #Apply augmentation
-        img1_aug = image_augmentation(img1, (256,256))
+        img3, p_depth_3, p_mask_3, p_loc_x_3, p_loc_y_3, p_label_3 = image3
 
         # Move images to device
-        img1_aug = img1_aug.to(device)
         img1 = img1.to(device)
         img2 = img2.to(device)
+        img3 = img3.to(device)
 
         # Zero gradient
         optimizer.zero_grad()
 
         # Forward pass
         encoded_img1, decoded_img1 = model(img1)
-        encoded_img1_aug, decoded_img1_aug = model(img1_aug)
         encoded_img2, decoded_img2 = model(img2)
+        encoded_img3, decoded_img3 = model(img3)
         
 
         #Compute contrastive_loss
-        loss = torch.Tensor(contrastive_loss(encoded_img1, encoded_img1_aug, encoded_img2))
+        loss = TF.mse_loss(decoded_img1,img1) + torch.Tensor(contrastive_loss(encoded_img1, encoded_img2, encoded_img3))
 
         # Compute gradient loss
         loss.backward()

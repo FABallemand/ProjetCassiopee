@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import datetime
 
 import torch
@@ -6,12 +7,13 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 import torchview
 
-from ....setup import setup_python, setup_pytorch
-from ....plot import plot_summary
-from ....transformation import RandomCrop, ObjectCrop
-from ....dataset import RGBDObjectDataset_Unsupervised_Contrast
-from .autoencoder import TestAutoencoder
-from .train_contrastive import train, test
+sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee")
+from src.setup import setup_python, setup_pytorch
+from src.plot import final_plot
+from src.transformation import RandomCrop, ObjectCrop
+from src.dataset import RGBDObjectDataset_Unsupervised_Contrast
+from src.models.rgbd_object.autoencoder.autoencoder import TestAutoencoder
+from src.models.rgbd_object.autoencoder.train_contrastive import train, test
 
 
 def rgbd_object_ae_unsupervised_contrastive_training():
@@ -40,15 +42,15 @@ def rgbd_object_ae_unsupervised_contrastive_training():
     NB_MAX_TEST_SAMPLES = 40
 
     # Training parameters
-    BATCH_SIZE = 1   # Batch size
+    BATCH_SIZE = 5   # Batch size
     SHUFFLE = True    # Shuffle
     DROP_LAST = False # Drop last batch
 
     LOSS_FUNCTION = torch.nn.MSELoss() # Loss function
     OPTIMIZER_TYPE = "SGD"             # Type of optimizer
 
-    EPOCHS = [1]            # Number of epochs
-    LEARNING_RATES = [0.01] # Learning rates
+    EPOCHS = [100]            # Number of epochs
+    LEARNING_RATES = [0.001] # Learning rates
     
     EARLY_STOPPING = False # Early stopping
     PATIENCE = 10          # Early stopping patience
@@ -147,7 +149,7 @@ def rgbd_object_ae_unsupervised_contrastive_training():
     torch.save(model.state_dict(), os.path.join(results_dir, results_file))
 
     # Plot results
-    plot_summary(type(train_dataset).__name__, INPUT_SIZE, None, MODALITIES,
+    final_plot(type(train_dataset).__name__, INPUT_SIZE, None, MODALITIES,
                  type(TRANSFORMATION).__name__, type(CROP_TRANSFORMATION).__name__,
                  len(train_dataset), len(validation_dataset), len(test_dataset),
                  BATCH_SIZE, SHUFFLE, DROP_LAST,

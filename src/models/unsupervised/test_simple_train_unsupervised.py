@@ -10,7 +10,7 @@ import sklearn
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
-from src.models.combined_model.train_contrastive import contrastive_loss
+from src.loss.contrastive_loss import contrastive_loss
 from src.train import create_optimizer
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
@@ -39,7 +39,7 @@ def train_one_epoch(model, data_loader, optimizer, device):
     for i, batch in enumerate(data_loader):
 
         # Load and prepare batch
-        image1, image2 = batch
+        image1, image2, image3 = batch
 
         img1, p_depth_1, p_mask_1, p_loc_x_1, p_loc_y_1, p_label_1 = image1
         img2, p_depth_2, p_mask_2, p_loc_x_2, p_loc_y_2, p_label_2 = image2
@@ -55,8 +55,7 @@ def train_one_epoch(model, data_loader, optimizer, device):
         # Forward pass
         encoded_img1, decoded_img1 = model(img1)
         
-        print("decoded img", decoded_img1.shape)
-        print("img", img1.shape)
+    
         #Compute_loss
         loss = TF.mse_loss(decoded_img1,img1)
 
@@ -106,7 +105,7 @@ def train(
             # Train for one epoch
             if debug:
                 with torch.autograd.detect_anomaly():
-                    _, train_loss = train_one_epoch(model, train_data_loader, optimizer, device)
+                    train_loss = train_one_epoch(model, train_data_loader, optimizer, device)
                     train_losses.append(train_loss)
             else:
                 _, train_loss = train_one_epoch(model, train_data_loader, optimizer, device)

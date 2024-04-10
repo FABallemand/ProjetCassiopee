@@ -57,6 +57,6 @@ def plot_results(train_accuracies, train_losses,
     axs[1, 1].axis("off")
 
     # Save figure
-    plt.savefig("self_supervised_learning/dev/ProjetCassiopee/train_results/cnn_mocaplab/" + model_path + ".png")
+    plt.savefig("self_supervised_learning/dev/ProjetCassiopee/train_results/rnn_mocaplab/" + model_path + ".png")
 
     plt.show()

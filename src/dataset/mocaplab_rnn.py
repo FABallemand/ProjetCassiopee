@@ -4,9 +4,9 @@ import pandas as pd
 import csv
 from torch.utils.data import Dataset
 import numpy as np
-import torch
+from PIL import Image as im
 
-class MocaplabDataset(Dataset):
+class MocaplabDatasetRNN(Dataset):
     """
     PyTorch dataset for the Mocaplab dataset.
     """
@@ -93,52 +93,5 @@ class MocaplabDataset(Dataset):
             for _ in range(self.max_length-len(data)) :
                 data.append([0.0 for _ in range(237)])
             data = np.stack(data)
-        
+    
         return data, label
-    
-    # def _add_empty_cell(csv_file, row_index, col_index):
-    #     with open(csv_file, "r") as file:
-    #         reader = csv.reader(file, delimiter=";")
-    #         data = list(reader)
-
-    #     if row_index < len(data):
-    #         if col_index < len(data[row_index]):
-    #             data[row_index].insert(col_index, "")
-
-    #             with open(csv_file, "w", newline="") as file:
-    #                 writer = csv.writer(file, delimiter=";")
-    #                 writer.writerows(data)
-    #             # print("Cellule vide ajoutée avec succès.")
-    #         else:
-    #             pass
-    #             # print("Index de colonne non valide.")
-    #     # else:
-    #         # print("Index de ligne non valide.")
-
-    
-def read_csv(csv_file) :
-    data = []
-    with open(csv_file, 'r') as file:
-        csv_reader = csv.reader(file, delimiter=';')
-        n=0
-        for line in csv_reader :
-            if n>=2 :
-                values = line[2:]
-                for i in range(len(values)) :
-                    values[i] = float(values[i])
-                data.append(values)
-            n+=1
-    result = np.stack(data)
-    return result
-
-def main():
-    """ Main program """
-    data = read_csv("self_supervised_learning/dev/ProjetCassiopee/data/mocaplab/Cassiopée_Allbones/Ville.csv")
-    data = data.tolist()
-    for _ in range(86-len(data)) :
-        data.append([0.0 for _ in range(237)])
-    data = np.stack(data)
-    print(data.shape)
-
-if __name__ == "__main__":
-    main()

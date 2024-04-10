@@ -69,6 +69,10 @@ def train_one_epoch(model, data_loader, reconstruction_loss_function, optimizer,
         if i % 10 == 0:
             # Batch loss
             print(f"    Batch {i}: loss={loss}")
+
+            with open("test_unsupervised_contrastive.log", "a") as f:
+                f.write(f"     loss={loss:.4f}\n")
+
         i += 1
 
     # Compute validation loss
@@ -175,6 +179,10 @@ def train(
 
             print(f"Train: loss={train_loss}")
             print(f"Validation: loss={validation_loss}")
+
+            with open("test_unsupervised_contrastive.log", "a") as f:
+                f.write(f"Train:      loss={train_loss:.8f}\n")
+                f.write(f"Validation: loss={validation_loss:.8f}\n")
 
             # Early stopping
             if early_stopping:

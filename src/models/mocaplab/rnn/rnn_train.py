@@ -1,16 +1,14 @@
 import os
 import sys
 from datetime import datetime
-import numpy as np
 
 import torch
 from torch.utils.data import DataLoader
-from torchvision import transforms
 
 sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee")
 from src.setup import setup_python, setup_pytorch
-from src.dataset import MocaplabDatasetFC
-from fc import MocaplabFC
+from src.dataset import MocaplabDatasetRNN
+from rnn import RNN
 from plot_results import plot_results
 from train import *
 
@@ -33,13 +31,13 @@ if __name__=='__main__':
     NB_MAX_TEST_SAMPLES = None
 
     # Training parameters
-    BATCH_SIZE = 16 # Batch size
+    BATCH_SIZE = 4 # Batch size
 
     LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
     OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
 
-    EPOCHS = [32]                     # Number of epochs
-    LEARNING_RATES = [0.001] # Learning rates
+    EPOCHS = [32, 16]                       # Number of epochs
+    LEARNING_RATES = [0.0001, 0.00001]           # Learning rates
     
     EARLY_STOPPING = False # Early stopping flag
     PATIENCE = 10          # Early stopping patience
@@ -50,7 +48,7 @@ if __name__=='__main__':
     # Datasets
     print("#### Datasets ####")
 
-    dataset = MocaplabDatasetFC(path="self_supervised_learning/dev/ProjetCassiopee/data/mocaplab/Cassiopée_Allbones",
+    dataset = MocaplabDatasetRNN(path="self_supervised_learning/dev/ProjetCassiopee/data/mocaplab/Cassiopée_Allbones",
                               padding = True, 
                               train_test_ratio = 8,
                               validation_percentage = 0.01)
@@ -84,7 +82,7 @@ if __name__=='__main__':
     
     # Create neural network
     print("#### Model ####")
-    model = MocaplabFC(dataset.max_length*237).to(DEVICE)
+    model = RNN(input_size=237, hidden_size=32, num_layers=2, output_size=2).to(DEVICE)
 
     # Save training time start
     start_timestamp = datetime.now()
@@ -114,9 +112,6 @@ if __name__=='__main__':
     
     # Test model
     test_acc, test_confusion_matrix = test(model, test_data_loader, DEVICE)
-    
-    print("ok")
-    exit(0)
 
     # Plot results
     plot_results(train_acc, train_loss,
@@ -127,7 +122,7 @@ if __name__=='__main__':
                  test_acc, test_confusion_matrix, stop_timestamp, model_path)
     
     # Save model
-    torch.save(model.state_dict(), "self_supervised_learning/dev/ProjetCassiopee/src/models/mocaplab/fc/saved_models/" + model_path + ".ckpt")
+    torch.save(model.state_dict(), "self_supervised_learning/dev/ProjetCassiopee/src/models/mocaplab/rnn/saved_models/" + model_path + ".ckpt")
     
     # End training
     print("#### End ####")

@@ -16,6 +16,8 @@ from ....dataset import RGBDObjectDataset
 from .cnn import TestCNN, TestSmallerCNN
 from .train import train, test
 
+from ....plot import loss_accuracy_plot
+
 
 def rgbd_object_cnn_supervised_training():
 
@@ -59,7 +61,7 @@ def rgbd_object_cnn_supervised_training():
     LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
     OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
 
-    EPOCHS = [10]            # Number of epochs
+    EPOCHS = [100]           # Number of epochs
     LEARNING_RATES = [0.001] # Learning rates
     
     EARLY_STOPPING = False # Early stopping
@@ -117,19 +119,22 @@ def rgbd_object_cnn_supervised_training():
     train_data_loader = DataLoader(train_dataset,
                                    batch_size=BATCH_SIZE,
                                    shuffle=SHUFFLE,
-                                   drop_last=DROP_LAST)
+                                   drop_last=DROP_LAST,
+                                   num_workers=4)
     
     logging.info("## Validation Data Loader ##")
     validation_data_loader = DataLoader(validation_dataset,
                                         batch_size=BATCH_SIZE,
                                         shuffle=SHUFFLE,
-                                        drop_last=DROP_LAST)
+                                        drop_last=DROP_LAST,
+                                        num_workers=4)
     
     logging.info("## Test Data Loader ##")
     test_data_loader = DataLoader(test_dataset,
                                   batch_size=BATCH_SIZE,
                                   shuffle=SHUFFLE,
-                                  drop_last=DROP_LAST)
+                                  drop_last=DROP_LAST,
+                                  num_workers=4)
     
     # Neural network
     logging.info("#### Model ####")
@@ -144,11 +149,13 @@ def rgbd_object_cnn_supervised_training():
     logging.info(f"DEBUG = {DEBUG}")
 
     # model = TestCNN(nb_classes=len(train_dataset.class_dict)).to(DEVICE)
-    model = TestSmallerCNN(nb_classes=len(train_dataset.class_dict)).to(DEVICE)
+    # model = TestSmallerCNN(nb_classes=len(train_dataset.class_dict)).to(DEVICE)
 
-    # model = resnet18(weights=ResNet18_Weights.DEFAULT)
-    # model.fc = torch.nn.Linear(512, len(train_dataset.class_dict), bias=True)
-    # model = model.to(DEVICE)
+    model = resnet18(weights=ResNet18_Weights.DEFAULT)
+    for param in model.parameters():
+        param.requires_grad = False
+    model.fc = torch.nn.Linear(512, len(train_dataset.class_dict), bias=True)
+    model = model.to(DEVICE)
 
     logging.info(model)
 
@@ -170,6 +177,9 @@ def rgbd_object_cnn_supervised_training():
                                                                  results_dir,
                                                                  DEBUG)
     
+    # Plot training results
+    loss_accuracy_plot(range(1, len(train_loss)+1), train_loss, train_acc, val_loss, val_acc, run_epochs, os.path.join(results_dir, "train.png"))
+
     # Save training time stop
     stop_timestamp = datetime.now()
     

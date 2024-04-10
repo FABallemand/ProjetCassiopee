@@ -10,7 +10,7 @@ from torchvision import transforms
 sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee")
 from src.setup import setup_python, setup_pytorch
 from src.dataset import MocaplabDatasetFC
-from fc import MocaplabFC
+from cnn1D import CNN1D
 from plot_results import plot_results
 from train import *
 
@@ -23,8 +23,8 @@ if __name__=='__main__':
     setup_python()
 
     # Set-up PyTorch
-    DEVICE = setup_pytorch()
-    #DEVICE = torch.device("cpu")
+    #DEVICE = setup_pytorch()
+    DEVICE = torch.device("cpu")
 
     # Dataset parameters
     
@@ -84,7 +84,7 @@ if __name__=='__main__':
     
     # Create neural network
     print("#### Model ####")
-    model = MocaplabFC(dataset.max_length*237).to(DEVICE)
+    model = CNN1D(nb_classes=2).to(DEVICE)      # dataset.max_length*237
 
     # Save training time start
     start_timestamp = datetime.now()
@@ -114,9 +114,6 @@ if __name__=='__main__':
     
     # Test model
     test_acc, test_confusion_matrix = test(model, test_data_loader, DEVICE)
-    
-    print("ok")
-    exit(0)
 
     # Plot results
     plot_results(train_acc, train_loss,
@@ -127,7 +124,7 @@ if __name__=='__main__':
                  test_acc, test_confusion_matrix, stop_timestamp, model_path)
     
     # Save model
-    torch.save(model.state_dict(), "self_supervised_learning/dev/ProjetCassiopee/src/models/mocaplab/fc/saved_models/" + model_path + ".ckpt")
+    torch.save(model.state_dict(), "self_supervised_learning/dev/ProjetCassiopee/src/models/mocaplab/cnn1D/saved_models/" + model_path + ".ckpt")
     
     # End training
     print("#### End ####")

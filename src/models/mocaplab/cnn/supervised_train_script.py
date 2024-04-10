@@ -9,7 +9,7 @@ from torchvision import transforms
 
 sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee")
 from src.setup import setup_python, setup_pytorch
-from src.dataset import MocaplabDataset
+from src.dataset import MocaplabDatasetCNN
 from cnn import TestCNN
 from plot_results import plot_results
 from train import *
@@ -23,8 +23,8 @@ if __name__=='__main__':
     setup_python()
 
     # Set-up PyTorch
-    #DEVICE = setup_pytorch()
-    DEVICE = torch.device("cpu")
+    DEVICE = setup_pytorch()
+    #DEVICE = torch.device("cpu")
 
     # Dataset parameters
     
@@ -33,13 +33,13 @@ if __name__=='__main__':
     NB_MAX_TEST_SAMPLES = None
 
     # Training parameters
-    BATCH_SIZE = 8 # Batch size
+    BATCH_SIZE = 4 # Batch size
 
     LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
     OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
 
-    EPOCHS = [32]                     # Number of epochs
-    LEARNING_RATES = [0.001] # Learning rates
+    EPOCHS = [8, 8]                      # Number of epochs
+    LEARNING_RATES = [0.01, 0.001]     # Learning rates
     
     EARLY_STOPPING = False # Early stopping flag
     PATIENCE = 10          # Early stopping patience
@@ -50,7 +50,7 @@ if __name__=='__main__':
     # Datasets
     print("#### Datasets ####")
 
-    dataset = MocaplabDataset(path="self_supervised_learning/dev/ProjetCassiopee/data/mocaplab/Cassiopée_Allbones",
+    dataset = MocaplabDatasetCNN(path="self_supervised_learning/dev/ProjetCassiopee/data/mocaplab/Cassiopée_Allbones",
                               padding = True, 
                               train_test_ratio = 8,
                               validation_percentage = 0.01)
@@ -124,7 +124,7 @@ if __name__=='__main__':
                  test_acc, test_confusion_matrix, stop_timestamp, model_path)
     
     # Save model
-    torch.save(model.state_dict(), "self_supervised_learning/dev/ProjetCassiopee/src/models/mocaplab_fc/saved_models/" + model_path + ".ckpt")
+    torch.save(model.state_dict(), "self_supervised_learning/dev/ProjetCassiopee/src/models/mocaplab/cnn/saved_models/" + model_path + ".ckpt")
     
     # End training
     print("#### End ####")

@@ -1,2 +1,2 @@
-from .mocaplab_fc import *
+from .fc import *
 from .train import *

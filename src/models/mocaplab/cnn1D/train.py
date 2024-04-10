@@ -4,7 +4,6 @@ import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
 from src.train import create_optimizer
-from PIL import Image as im
 
 def train_one_epoch(model, data_loader, loss_function, optimizer, device):
 
@@ -30,7 +29,9 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, device):
         optimizer.zero_grad()
 
         # Make predictions for batch
-        output = model(data.double())
+        data_flattened = data.view(data.size(0), -1)
+        data_flattened = data_flattened.unsqueeze(1)
+        output = model(data_flattened.double())
 
         # Update accuracy variables
         _, predicted = torch.max(output.data, dim=1)
@@ -52,7 +53,7 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, device):
         train_loss += loss.item()
 
         # Log
-        if i % 5 == 0:
+        if i % 10 == 0:
             # Batch loss
             print(f"    Batch {i:8}: accuracy={batch_correct / label.size(0):.4f} | loss={loss:.4f}")
 
@@ -85,7 +86,8 @@ def evaluate(model, data_loader, loss_function, device):
             label = label.to(device)
 
             # Make predictions for batch
-            output = model(data.double())
+            data_flattened = data.view(data.size(0), -1)
+            output = model(data_flattened.double())
 
             # Update accuracy variables
             _, predicted = torch.max(output.data, dim=1)
@@ -195,7 +197,8 @@ def test(model, test_data_loader, device=torch.device("cpu")):
             label = label.to(device)
 
             # Make predictions for batch
-            output = model(data.double())
+            data_flattened = data.view(data.size(0), -1)
+            output = model(data_flattened.double())
 
             # Update accuracy variables
             _, predicted = torch.max(output.data, dim=1)

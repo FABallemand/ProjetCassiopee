@@ -1,12 +1,15 @@
+import os
+import logging
 import torch
-from sklearn.metrics import confusion_matrix
 from sklearn.manifold import TSNE
 
 import matplotlib.pyplot as plt
 
 from ....train import create_optimizer
+from ....plot.reconstruction_plot import reconstruction_plot
 
-def train_one_epoch(model, data_loader, loss_function, optimizer, device):
+
+def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, results_dir, device):
 
     # Enable training
     model.train(True)
@@ -29,9 +32,6 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, device):
         # Zero gradient
         optimizer.zero_grad()
 
-        # Prepare batch
-        # Data preprocessing?
-
         # Make predictions for batch
         encoded, decoded = model(rgb)
 
@@ -50,8 +50,18 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, device):
         # Log
         if i % 10 == 0:
             # Batch loss
-            print(f"    Batch {i}: loss={loss}")
+            logging.info(f"    Batch {i:8}/{len(data_loader)}: loss={loss:.4f}")
 
+        # Save model and plot reconstruction
+        if i % 1000 == 0 and i != 0:
+            torch.save(model.state_dict(), os.path.join(results_dir, f"weights_epoch_{epoch}_batch_{i}"))
+
+            # Plot reconstruction
+            reconstruction_plot(rgb.detach().cpu(),
+                                decoded.detach().cpu(),
+                                rgb.shape[0],
+                                os.path.join(results_dir, f"reconstruction_epoch_{epoch}_batch_{i}"))
+            
     # Compute validation accuracy and loss
     train_loss /= (i + 1) # Average loss over all batches of the epoch
     
@@ -87,6 +97,12 @@ def evaluate(model, data_loader, loss_function, device):
 
             # Update batch loss
             validation_loss += loss.item()
+        
+        # Plot reconstruction
+        # reconstruction_plot(rgb.detach().cpu(),
+        #                     decoded.detach().cpu(),
+        #                     rgb.shape[0],
+        #                     os.path.join(results_dir, f"reconstruction_epoch_{epoch}_batch_{i}"))
 
     # Compute validation accuracy and loss
     validation_loss /= (i + 1) # Average loss over all batches of the epoch
@@ -106,6 +122,7 @@ def train(
         patience=5,
         min_delta=1e-3,
         device=torch.device("cpu"),
+        results_dir="test",
         debug=False):
 
     # Losses
@@ -123,31 +140,39 @@ def train(
         # Create optimizer
         optimizer = create_optimizer(optimizer_type, model, learning_rate)
 
-        for epoch in range(epochs):
-            print(f"#### EPOCH {epoch} ####")
+        for epoch in range(1, epochs + 1):
+            logging.info(f"#### EPOCH {epoch:4}/{epochs} ####")
             
             # Train for one epoch
             if debug:
                 with torch.autograd.detect_anomaly():
-                    train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
+                    train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, epoch, results_dir, device)
                     train_losses.append(train_loss)
+                    
+                    # Print gradients for each parameter
+                    for name, param in model.named_parameters():
+                        if param.grad is not None:
+                            logging.debug(f'{name}.grad: mean={param.grad.mean()} | std={param.grad.std()}')
             else:
-                train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, device)
+                train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, epoch, results_dir, device)
                 train_losses.append(train_loss)
+
+            # Save model
+            torch.save(model.state_dict(), os.path.join(results_dir, f"weights_epoch_{epoch}"))
 
             # Evaluate model
             validation_loss = evaluate(model, validation_data_loader, loss_function, device)
             validation_losses.append(validation_loss)
 
-            print(f"Train: loss={train_loss}")
-            print(f"Validation: loss={validation_loss}")
+            logging.info(f"Train:      loss={train_loss:.8f}")
+            logging.info(f"Validation: loss={validation_loss:.8f}")
 
             # Early stopping
             if early_stopping:
                 if epoch > 0 and abs(validation_losses[epoch - 1] - validation_losses[epoch]) < min_delta:
                     counter += 1
                     if counter >= patience:
-                        print("==== Early Stopping ====")
+                        logging.info("==== Early Stopping ====")
                         break
                 else:
                     counter = 0
@@ -157,7 +182,7 @@ def train(
     return train_losses, validation_losses, run_epochs
 
 
-def test(model, test_data_loader, reconstruction_path=None, tsne_flag=True, device=torch.device("cpu")):
+def test(model, test_data_loader, tsne_flag=True, device=torch.device("cpu")):
 
     # TSNE variable
     encoded_features = []
