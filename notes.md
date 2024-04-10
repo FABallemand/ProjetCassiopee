@@ -1,33 +1,67 @@
 # 📝 Notes
 
 ## 🛠️ Set-up
-- https://vulkan.telecom-sudparis.eu/help/
-- Python 3.8.15
-- CUDA 11.5
-- pip3 install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
-- https://pytorch.org/blog/deprecation-cuda-python-support/
-- https://pytorch.org/get-started/previous-versions/
+- Guide: https://vulkan.telecom-sudparis.eu/help/
+- Launch Python virtual environment wizard:
+```bash
+/space/tools/scripts/setupFramework.sh
+```
+- Select:
+  - Virtualenv
+  - self_supervised_learning
+  - [keep default]
+  - Basic
+  - Tested
+  - Python 3.8.15
+  - GPU
+  - CUDA 11.5
 - Activate Python virtual environment:
 ```bash
-cd ../..
+cd /home/self_supervised_tmp/self_supervised_learning
 source start
-cd dev/ProjetCassiopee
 ```
+- Set-up project:
+```bash
+# Set-up Git project
+mkdir dev
+cd dev
+sudo apt install -y git
+git config --local user.name "FABallemand"
+git config --local user.email "allemand.fabien@orange.fr"
+git clone https://github.com/FABallemand/ProjetCassiopee
+cd ProjetCassiopee
+
+# Download data
+pip3 install gdown
+sudo apt-get install -y p7zip-full p7zip-rar
+nohup ./data/RGB-D_Object/download.sh &
+nohup ./data/mocaplab/download.sh &
+
+# Download requirements
+pip3 install -r requirement.txt
+pip3 install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
+```
+- https://pytorch.org/blog/deprecation-cuda-python-support/
+- https://pytorch.org/get-started/previous-versions/
 
 ## 💾 Useful Commands
 ```bash
-# Copy folder/file from local to server
-scp -r /path/to/local/dir user@remotehost:/path/to/remote/dir
+tar -xvf file.tar
+tar -xzvf file.tar.gz
+
+7za x file.zip -ooutput/path
 
 # Download Google Drive folder/file
 gdown --folder link/to/folder -O /path/to/dir
+
+# Copy folder/file from local to server
+scp -r /path/to/local/dir user@remotehost:/path/to/remote/dir
 
 nohup python3 -u main.py &
 
 # https://stackoverflow.com/questions/17385794/how-to-get-the-process-id-to-kill-a-nohup-process
 
-tar -xvf file.tar
-tar -xzvf file.tar.gz
+sudo reboot now
 ```
 
 ## 🗂️ Dataset
@@ -56,10 +90,3 @@ tar -xzvf file.tar.gz
 - Add cache files for datasets
 - Adjust TSNE perplexity (depending of the number of samples)
 - Log confusion matrix during training
-
- 507583 no freezing
- 507648 freezing
-
- 514658
-
- sudo reboot now
