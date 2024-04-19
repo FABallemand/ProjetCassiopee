@@ -65,13 +65,13 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, device,
             # Batch loss
             logging.info(f"    Batch {i:8}/{len(data_loader)}: accuracy={batch_correct / label.size(0):.4f} | loss={loss:.4f}")
 
+            # Print memory usage
             if debug:
-                # Print memory usage
                 logging.debug(f"        RAM: {psutil.virtual_memory()[2]} % | {psutil.virtual_memory()[3] / 1000000000} GB")
                 logging.debug(f"        VRAM: {torch.cuda.memory_allocated() / 1000000000} / {torch.cuda.max_memory_allocated() / 1000000000}")
 
         # Save model
-        if i % 1000 == 0 and i != 0:
+        if i % 100 == 0 and i != 0:
             torch.save(model.state_dict(), os.path.join(results_dir, f"weights_epoch_{epoch}_batch_{i}"))
 
         del rgb
