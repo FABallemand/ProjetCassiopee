@@ -40,6 +40,13 @@ sudo apt-get install -y p7zip-full p7zip-rar
 nohup ./data/RGB-D_Object/download.sh &
 nohup ./data/mocaplab/download.sh &
 
+# Set-up Jupyter
+# https://janakiev.com/blog/jupyter-virtual-envs/#add-virtual-environment-to-jupyter-notebook
+# Deactivate virtual environment?
+pip3 install --user ipykernel
+python3 -m ipykernel install --user --name=self_supervised_learning
+jupyter kernelspec list
+
 # Download requirements
 pip3 install -r requirement.txt
 pip3 install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
@@ -77,12 +84,15 @@ sudo reboot now
 - [Motion-X: A Large-scale 3D Expressive Whole-body Human Motion Dataset](https://motion-x-dataset.github.io/)
 
 ## 🖥️ Code
+- [Tmux Tutorial Video](https://www.youtube.com/watch?v=Yl7NFenTgIo&ab_channel=HackerSploit)
+- [Tmux Cheat Sheet](https://tmuxcheatsheet.com/)
 - [PyTorch v1.12 Documentation](https://pytorch.org/docs/1.12/)
 - [PyTorch Tutorials](https://github.com/yunjey/pytorch-tutorial/tree/master)
 - [SimCLR Article](https://arxiv.org/pdf/2002.05709.pdf)
 - [SimCLR in PyTorch](https://medium.com/the-owl/simclr-in-pytorch-5f290cb11dd7)
 - [SimCLR Tutorial](https://deeplearning.neuromatch.io/tutorials/W3D3_UnsupervisedAndSelfSupervisedLearning/student/W3D3_Tutorial1.html)
 - [SimCLR Tutorial Videos](https://www.youtube.com/playlist?list=PLkBQOLLbi18NYb71nfD5gwwnZY4DPMCXu)
+- [Demystify RAM Usage in Multi-Process Data Loaders](https://ppwwyyxx.com/blog/2022/Demystify-RAM-Usage-in-Multiprocess-DataLoader/)
 
 ## 🧠 AI
 - [MMAction](https://github.com/open-mmlab/mmaction2)
@@ -93,3 +103,6 @@ sudo reboot now
 - Add cache files for datasets
 - Adjust TSNE perplexity (depending of the number of samples)
 - Log confusion matrix during training
+
+## Notes
+- RGB-D Object: 

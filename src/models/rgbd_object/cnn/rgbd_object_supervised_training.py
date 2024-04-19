@@ -52,11 +52,16 @@ def rgbd_object_cnn_supervised_training():
     NB_MAX_TRAIN_SAMPLES = None
     NB_MAX_VALIDATION_SAMPLES = None
     NB_MAX_TEST_SAMPLES = None
+    # NB_MAX_TRAIN_SAMPLES = 50000
+    # NB_MAX_VALIDATION_SAMPLES = 20000
+    # NB_MAX_TEST_SAMPLES = None
 
     # Training parameters
     BATCH_SIZE = 10   # Batch size
     SHUFFLE = True    # Shuffle
     DROP_LAST = False # Drop last batch
+    NUM_WORKERS = 4   # Number of prpocesses
+    PIN_MEMORY = True # Memory pinning
 
     LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
     OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
@@ -68,7 +73,7 @@ def rgbd_object_cnn_supervised_training():
     PATIENCE = 10          # Early stopping patience
     MIN_DELTA = 0.0001     # Early stopping minimum delta
 
-    DEBUG = False # Debug flag
+    DEBUG = True # Debug flag
     
     # Datasets
     logging.info("#### Datasets ####")
@@ -99,14 +104,14 @@ def rgbd_object_cnn_supervised_training():
                                            nb_max_samples=NB_MAX_VALIDATION_SAMPLES)
     logging.info(f"{len(validation_dataset)} samples")
     
-    logging.info("## Test Dataset ##")
-    test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
-                                     mode="test",
-                                     modalities=MODALITIES,
-                                     transformation=TRANSFORMATION,
-                                     crop_transformation=CROP_TRANSFORMATION,
-                                     nb_max_samples=NB_MAX_TEST_SAMPLES)
-    logging.info(f"{len(test_dataset)} samples")
+    # logging.info("## Test Dataset ##")
+    # test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
+    #                                  mode="test",
+    #                                  modalities=MODALITIES,
+    #                                  transformation=TRANSFORMATION,
+    #                                  crop_transformation=CROP_TRANSFORMATION,
+    #                                  nb_max_samples=NB_MAX_TEST_SAMPLES)
+    # logging.info(f"{len(test_dataset)} samples")
     
     # Data loaders
     logging.info("#### Data Loaders ####")
@@ -114,27 +119,32 @@ def rgbd_object_cnn_supervised_training():
     logging.info(f"BATCH_SIZE = {BATCH_SIZE}")
     logging.info(f"SHUFFLE = {SHUFFLE}")
     logging.info(f"DROP_LAST = {DROP_LAST}")
+    logging.info(f"NUM_WORKERS = {NUM_WORKERS}")
+    logging.info(f"PIN_MEMORY = {PIN_MEMORY}")
 
     logging.info("## Train Data Loader ##")
     train_data_loader = DataLoader(train_dataset,
                                    batch_size=BATCH_SIZE,
                                    shuffle=SHUFFLE,
                                    drop_last=DROP_LAST,
-                                   num_workers=4)
+                                   num_workers=NUM_WORKERS,
+                                   pin_memory=PIN_MEMORY)
     
     logging.info("## Validation Data Loader ##")
     validation_data_loader = DataLoader(validation_dataset,
                                         batch_size=BATCH_SIZE,
                                         shuffle=SHUFFLE,
                                         drop_last=DROP_LAST,
-                                        num_workers=4)
+                                        num_workers=NUM_WORKERS,
+                                        pin_memory=PIN_MEMORY)
     
-    logging.info("## Test Data Loader ##")
-    test_data_loader = DataLoader(test_dataset,
-                                  batch_size=BATCH_SIZE,
-                                  shuffle=SHUFFLE,
-                                  drop_last=DROP_LAST,
-                                  num_workers=4)
+    # logging.info("## Test Data Loader ##")
+    # test_data_loader = DataLoader(test_dataset,
+    #                               batch_size=BATCH_SIZE,
+    #                               shuffle=SHUFFLE,
+    #                               drop_last=DROP_LAST,
+    #                               num_workers=NUM_WORKERS,
+    #                               pin_memory=PIN_MEMORY)
     
     # Neural network
     logging.info("#### Model ####")
@@ -187,6 +197,23 @@ def rgbd_object_cnn_supervised_training():
     
     # Testing
     logging.info("#### Testing ####")
+
+    logging.info("## Test Dataset ##")
+    test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
+                                     mode="test",
+                                     modalities=MODALITIES,
+                                     transformation=TRANSFORMATION,
+                                     crop_transformation=CROP_TRANSFORMATION,
+                                     nb_max_samples=NB_MAX_TEST_SAMPLES)
+    logging.info(f"{len(test_dataset)} samples")
+
+    logging.info("## Test Data Loader ##")
+    test_data_loader = DataLoader(test_dataset,
+                                  batch_size=BATCH_SIZE,
+                                  shuffle=SHUFFLE,
+                                  drop_last=DROP_LAST,
+                                  num_workers=NUM_WORKERS,
+                                  pin_memory=PIN_MEMORY)
 
     # Test model
     all_labels, all_predicted = test(model, test_data_loader, DEVICE)

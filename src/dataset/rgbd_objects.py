@@ -1,5 +1,6 @@
 import os
 import random
+import numpy as np
 import cv2
 import torch
 import torchvision
@@ -78,10 +79,13 @@ class RGBDObjectDataset(Dataset):
 
         self.x = []
         self.y = []
-        self.removed = []
+        # self.removed = []
         
         self._create_labels_dict()
         self._load_data()
+
+        self.x = np.array(self.x)
+        self.y = np.array(self.y)
 
     def __str__(self):
         return (f"RGBDObjectDataset(path={self.path}, mode={self.mode}, class_names={self.class_names}, modalities={self.modalities}, "
@@ -121,21 +125,21 @@ class RGBDObjectDataset(Dataset):
                             if self.debug:
                                 print(f"Missing depth data for {sample}")
                             data = list(filter(lambda s: s != sample, data))
-                            self.removed.append(sample)
+                            # self.removed.append(sample)
                 if self.mask_flag:
                     for sample in data:
                         if (sample + "_mask") not in all_files:
                             if self.debug:
                                 print(f"Missing mask data for {sample}")
                             data = list(filter(lambda s: s != sample, data))
-                            self.removed.append(sample)
+                            # self.removed.append(sample)
                 if self.loc_flag:
                     for sample in data:
                         if (sample + "_loc") not in all_files:
                             if self.debug:
                                 print(f"Missing localisation data for {sample}")
                             data = list(filter(lambda s: s != sample, data))
-                            self.removed.append(sample)
+                            # self.removed.append(sample)
 
                 # Sort data
                 data = sorted(data)

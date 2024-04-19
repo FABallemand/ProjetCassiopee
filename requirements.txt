@@ -1,7 +1,9 @@
+psutil
 numpy
 pandas
-scikit-learn
 opencv-python
+scikit-learn
+torcheval
 matplotlib
 seaborn
 graphviz

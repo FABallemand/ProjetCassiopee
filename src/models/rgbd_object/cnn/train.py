@@ -1,11 +1,12 @@
 import os
+import psutil
 import logging
 import torch
 
 from ....train import create_optimizer
 
 
-def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, results_dir, device):
+def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, device, results_dir, debug=False):
 
     # Enable training
     model.train(True)
@@ -35,6 +36,9 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, results
         # Make predictions for batch
         output = model(rgb)
 
+        if output.isnan().any():
+            logging.debug("output contains NaN")
+
         # Update accuracy variables
         _, predicted = torch.max(output.data, 1)
         total += len(label)
@@ -44,6 +48,9 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, results
         # Compute loss
         loss = loss_function(output, label)
 
+        if loss.isnan().any():
+            logging.debug("loss contains NaN")
+
         # Compute gradient loss
         loss.backward()
 
@@ -51,16 +58,33 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, results
         optimizer.step()
 
         # Update losses
-        train_loss += loss.item()
+        train_loss += loss.detach().item()
 
         # Log
         if i % 10 == 0:
             # Batch loss
             logging.info(f"    Batch {i:8}/{len(data_loader)}: accuracy={batch_correct / label.size(0):.4f} | loss={loss:.4f}")
 
+            if debug:
+                # Print memory usage
+                logging.debug(f"        RAM: {psutil.virtual_memory()[2]} % | {psutil.virtual_memory()[3] / 1000000000} GB")
+                logging.debug(f"        VRAM: {torch.cuda.memory_allocated() / 1000000000} / {torch.cuda.max_memory_allocated() / 1000000000}")
+
         # Save model
         if i % 1000 == 0 and i != 0:
             torch.save(model.state_dict(), os.path.join(results_dir, f"weights_epoch_{epoch}_batch_{i}"))
+
+        del rgb
+        del depth
+        del mask
+        del loc_x
+        del loc_y
+        del label
+
+        # Clear cache
+        if device != torch.device("cpu"):
+            logging.debug("Clear GPU cache")
+            torch.cuda.empty_cache()
 
     # Compute train accuracy and loss
     train_accuracy = correct / total
@@ -106,7 +130,7 @@ def evaluate(model, data_loader, loss_function, device):
             loss = loss_function(output, label)
 
             # Update batch loss
-            validation_loss += loss.item()
+            validation_loss += loss.detach().item()
 
     # Compute validation accuracy and loss
     validation_accuracy = correct / total
@@ -155,26 +179,40 @@ def train(
             # Train for one epoch
             if debug:
                 with torch.autograd.detect_anomaly():
-                    train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, epoch, results_dir, device)
+                    train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, epoch, device, results_dir, debug)
                     train_accuracies.append(train_accuracy)
                     train_losses.append(train_loss)
 
-                    # Print gradients for each parameter
-                    for name, param in model.named_parameters():
-                        if param.grad is not None:
-                            logging.debug(f'{name}.grad: mean={param.grad.mean()} | std={param.grad.std()}')
+                    # Print memory usage
+                    logging.debug(f"RAM: {psutil.virtual_memory()[2]} % | {psutil.virtual_memory()[3] / 1000000000} GB")
+                    logging.debug(f"VRAM: {torch.cuda.memory_allocated() / 1000000000} / {torch.cuda.max_memory_allocated() / 1000000000}")
+
+                    # # Print gradients for each parameter
+                    # for name, param in model.named_parameters():
+                    #     if param.grad is not None:
+                    #         logging.debug(f'{name}.grad: mean={param.grad.mean()} | std={param.grad.std()}')
             else:
-                train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, epoch, results_dir, device)
+                train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, epoch, device, results_dir)
                 train_accuracies.append(train_accuracy)
                 train_losses.append(train_loss)
 
             # Save model
             torch.save(model.state_dict(), os.path.join(results_dir, f"weights_epoch_{epoch}"))
 
+            # Clear cache
+            if device != torch.device("cpu"):
+                logging.debug("Clear GPU cache")
+                torch.cuda.empty_cache()
+
             # Evaluate model
             validation_accuracy, validation_loss = evaluate(model, validation_data_loader, loss_function, device)
             validation_accuracies.append(validation_accuracy)
             validation_losses.append(validation_loss)
+
+            # Clear cache
+            if device != torch.device("cpu"):
+                logging.debug("Clear GPU cache")
+                torch.cuda.empty_cache()
 
             logging.info(f"Train:      accuracy={train_accuracy:.8f}      | loss={train_loss:.8f}")
             logging.info(f"Validation: accuracy={validation_accuracy:.8f} | loss={validation_loss:.8f}")
