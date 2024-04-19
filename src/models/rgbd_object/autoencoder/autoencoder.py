@@ -219,13 +219,14 @@ class ResNetAutoencoder(nn.Module) :
     Autoencoder neural network with ResNet18 encoder.
     """
 
-    def __init__(self):
+    def __init__(self, weights_freezing=False):
         super().__init__()
 
         # Encoder
         self.encoder = resnet18(weights=ResNet18_Weights.DEFAULT)
-        # for param in self.encoder.parameters():
-        #     param.requires_grad = False
+        if weights_freezing:
+            for param in self.encoder.parameters():
+                param.requires_grad = False
         self.encoder.fc = torch.nn.Linear(512, 256)
         
         # Decoder

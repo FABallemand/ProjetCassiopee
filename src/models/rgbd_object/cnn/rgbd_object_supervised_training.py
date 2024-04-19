@@ -65,6 +65,7 @@ def rgbd_object_cnn_supervised_training():
 
     LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
     OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
+    WEIGHTS_FREEZING = False                    # Weight freezing
 
     EPOCHS = [100]           # Number of epochs
     LEARNING_RATES = [0.001] # Learning rates
@@ -151,6 +152,7 @@ def rgbd_object_cnn_supervised_training():
 
     logging.info(f"LOSS_FUNCTION = {LOSS_FUNCTION}")
     logging.info(f"OPTIMIZER_TYPE = {OPTIMIZER_TYPE}")
+    logging.info(f"WEIGHTS_FREEZING = {WEIGHTS_FREEZING}")
     logging.info(f"EPOCHS = {EPOCHS}")
     logging.info(f"LEARNING_RATES = {LEARNING_RATES}")
     logging.info(f"EARLY_STOPPING = {EARLY_STOPPING}")
@@ -162,10 +164,9 @@ def rgbd_object_cnn_supervised_training():
     # model = TestSmallerCNN(nb_classes=len(train_dataset.class_dict)).to(DEVICE)
 
     model = resnet18(weights=ResNet18_Weights.DEFAULT)
-    logging.info(f"WEIGHT_FREEZING = False")
-    # logging.info(f"WEIGHT_FREEZING = True")
-    # for param in model.parameters():
-    #     param.requires_grad = False
+    if WEIGHTS_FREEZING:
+        for param in model.parameters():
+            param.requires_grad = False
     model.fc = torch.nn.Linear(512, len(train_dataset.class_dict), bias=True)
     model = model.to(DEVICE)
 

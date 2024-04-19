@@ -47,17 +47,23 @@ def rgbd_object_ae_unsupervised_training():
     CROP_TRANSFORMATION = ObjectCrop(output_size=INPUT_SIZE,
                                      padding=(20,20),
                                      offset_range=(-10,10))
-    NB_MAX_TRAIN_SAMPLES = None
-    NB_MAX_VALIDATION_SAMPLES = None
+    # NB_MAX_TRAIN_SAMPLES = None
+    # NB_MAX_VALIDATION_SAMPLES = None
+    # NB_MAX_TEST_SAMPLES = None
+    NB_MAX_TRAIN_SAMPLES = 20000
+    NB_MAX_VALIDATION_SAMPLES = 100
     NB_MAX_TEST_SAMPLES = None
 
     # Training parameters
     BATCH_SIZE = 5   # Batch size
     SHUFFLE = True    # Shuffle
     DROP_LAST = False # Drop last batch
+    NUM_WORKERS = 4   # Number of prpocesses
+    PIN_MEMORY = True # Memory pinning
 
     LOSS_FUNCTION = torch.nn.MSELoss() # Loss function
     OPTIMIZER_TYPE = "SGD"             # Type of optimizer
+    WEIGHTS_FREEZING = False            # Weight freezing
 
     EPOCHS = [10]            # Number of epochs
     LEARNING_RATES = [0.001] # Learning rates
@@ -66,7 +72,7 @@ def rgbd_object_ae_unsupervised_training():
     PATIENCE = 10          # Early stopping patience
     MIN_DELTA = 0.0001     # Early stopping minimum deltaCwewKWRvMjQQdb5l
 
-    DEBUG = False # Debug flag
+    DEBUG = True # Debug flag
     
     # Datasets
     logging.info("#### Datasets ####")
@@ -97,14 +103,14 @@ def rgbd_object_ae_unsupervised_training():
                                            nb_max_samples=NB_MAX_VALIDATION_SAMPLES)
     logging.info(f"{len(validation_dataset)} samples")
 
-    logging.info("## Test Dataset ##")
-    test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
-                                     mode="test",
-                                     modalities=MODALITIES,
-                                     transformation=TRANSFORMATION,
-                                     crop_transformation=CROP_TRANSFORMATION,
-                                     nb_max_samples=NB_MAX_TEST_SAMPLES)
-    logging.info(f"{len(test_dataset)} samples")
+    # logging.info("## Test Dataset ##")
+    # test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
+    #                                  mode="test",
+    #                                  modalities=MODALITIES,
+    #                                  transformation=TRANSFORMATION,
+    #                                  crop_transformation=CROP_TRANSFORMATION,
+    #                                  nb_max_samples=NB_MAX_TEST_SAMPLES)
+    # logging.info(f"{len(test_dataset)} samples")
     
     # Data loaders
     logging.info("#### Data Loaders ####")
@@ -112,33 +118,40 @@ def rgbd_object_ae_unsupervised_training():
     logging.info(f"BATCH_SIZE = {BATCH_SIZE}")
     logging.info(f"SHUFFLE = {SHUFFLE}")
     logging.info(f"DROP_LAST = {DROP_LAST}")
+    logging.info(f"NUM_WORKERS = {NUM_WORKERS}")
+    logging.info(f"PIN_MEMORY = {PIN_MEMORY}")
 
     logging.info("## Train Data Loader ##")
     train_data_loader = DataLoader(train_dataset,
                                    batch_size=BATCH_SIZE,
                                    shuffle=SHUFFLE,
                                    drop_last=DROP_LAST,
-                                   num_workers=4)
+                                   num_workers=NUM_WORKERS,
+                                   pin_memory=PIN_MEMORY)
+    
     
     logging.info("## Validation Data Loader ##")
     validation_data_loader = DataLoader(validation_dataset,
                                         batch_size=BATCH_SIZE,
                                         shuffle=SHUFFLE,
                                         drop_last=DROP_LAST,
-                                        num_workers=4)
+                                        num_workers=NUM_WORKERS,
+                                        pin_memory=PIN_MEMORY)
     
-    logging.info("## Test Data Loader ##")
-    test_data_loader = DataLoader(test_dataset,
-                                  batch_size=BATCH_SIZE,
-                                  shuffle=SHUFFLE,
-                                  drop_last=DROP_LAST,
-                                  num_workers=4)
+    # logging.info("## Test Data Loader ##")
+    # test_data_loader = DataLoader(test_dataset,
+    #                               batch_size=BATCH_SIZE,
+    #                               shuffle=SHUFFLE,
+    #                               drop_last=DROP_LAST,
+    #                               num_workers=NUM_WORKERS,
+    #                               pin_memory=PIN_MEMORY)
     
     # Neural network
     logging.info("#### Model ####")
 
     logging.info(f"LOSS_FUNCTION = {LOSS_FUNCTION}")
     logging.info(f"OPTIMIZER_TYPE = {OPTIMIZER_TYPE}")
+    logging.info(f"WEIGHTS_FREEZING = {WEIGHTS_FREEZING}")
     logging.info(f"EPOCHS = {EPOCHS}")
     logging.info(f"LEARNING_RATES = {LEARNING_RATES}")
     logging.info(f"EARLY_STOPPING = {EARLY_STOPPING}")
@@ -148,7 +161,7 @@ def rgbd_object_ae_unsupervised_training():
 
     # model = TestAutoencoder().to(DEVICE)
     # model = TestAutoencoder_skip().to(DEVICE)
-    model = ResNetAutoencoder().to(DEVICE)
+    model = ResNetAutoencoder(WEIGHTS_FREEZING).to(DEVICE)
 
     logging.info(model)
 
@@ -175,6 +188,23 @@ def rgbd_object_ae_unsupervised_training():
     
     # Testing
     logging.info("#### Testing ####")
+
+    logging.info("## Test Dataset ##")
+    test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
+                                     mode="test",
+                                     modalities=MODALITIES,
+                                     transformation=TRANSFORMATION,
+                                     crop_transformation=CROP_TRANSFORMATION,
+                                     nb_max_samples=NB_MAX_TEST_SAMPLES)
+    logging.info(f"{len(test_dataset)} samples")
+
+    logging.info("## Test Data Loader ##")
+    test_data_loader = DataLoader(test_dataset,
+                                  batch_size=BATCH_SIZE,
+                                  shuffle=SHUFFLE,
+                                  drop_last=DROP_LAST,
+                                  num_workers=NUM_WORKERS,
+                                  pin_memory=PIN_MEMORY)
 
     # Test model
     tsne_results_2d, tsne_results_3d, labels_arr = test(model, test_data_loader, DEVICE)
