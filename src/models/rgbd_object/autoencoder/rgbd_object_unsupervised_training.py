@@ -1,20 +1,15 @@
 import os
-import sys
 from datetime import datetime
 import logging
 
 import torch
 from torch.utils.data import DataLoader
-from torchvision import transforms
-import torchview
 
-sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee")
-from src.setup import setup_python, setup_pytorch
-from src.plot import final_plot
-from src.transformation import RandomCrop, ObjectCrop
-from src.dataset import RGBDObjectDataset
-from src.models.rgbd_object.autoencoder.autoencoder import TestAutoencoder, TestAutoencoder_skip, ResNetAutoencoder
-from src.models.rgbd_object.autoencoder.train import train, test
+from ....setup import setup_python, setup_pytorch
+from ....transformation import ObjectCrop
+from ....dataset import RGBDObjectDataset
+from .autoencoder import ResNetAutoencoder
+from .train import train, test
 
 
 def rgbd_object_ae_unsupervised_training():
@@ -47,34 +42,37 @@ def rgbd_object_ae_unsupervised_training():
     CROP_TRANSFORMATION = ObjectCrop(output_size=INPUT_SIZE,
                                      padding=(20,20),
                                      offset_range=(-10,10))
-    # NB_MAX_TRAIN_SAMPLES = None
-    # NB_MAX_VALIDATION_SAMPLES = None
-    # NB_MAX_TEST_SAMPLES = None
-    NB_MAX_TRAIN_SAMPLES = 20000
-    NB_MAX_VALIDATION_SAMPLES = 100
+    NB_MAX_TRAIN_SAMPLES = None
+    NB_MAX_VALIDATION_SAMPLES = None
     NB_MAX_TEST_SAMPLES = None
+    # NB_MAX_TRAIN_SAMPLES = 20000
+    # NB_MAX_VALIDATION_SAMPLES = 100
+    # NB_MAX_TEST_SAMPLES = None
+    SPLIT = None
 
     # Training parameters
+    WEIGHTS_FREEZING = True # Weight freezing
+    LAST_CHECKPOINT = None # Last checkpoint to load
+
     BATCH_SIZE = 5   # Batch size
     SHUFFLE = True    # Shuffle
     DROP_LAST = False # Drop last batch
-    NUM_WORKERS = 4   # Number of prpocesses
+    NUM_WORKERS = 0   # Number of prpocesses
     PIN_MEMORY = True # Memory pinning
 
     LOSS_FUNCTION = torch.nn.MSELoss() # Loss function
     OPTIMIZER_TYPE = "SGD"             # Type of optimizer
-    WEIGHTS_FREEZING = False            # Weight freezing
 
-    EPOCHS = [10]            # Number of epochs
+    EPOCHS = [1000]          # Number of epochs
     LEARNING_RATES = [0.001] # Learning rates
     
     EARLY_STOPPING = False # Early stopping
     PATIENCE = 10          # Early stopping patience
     MIN_DELTA = 0.0001     # Early stopping minimum deltaCwewKWRvMjQQdb5l
 
-    DEBUG = True # Debug flag
+    DEBUG = False # Debug flag
     
-    # Datasets
+    # Training datasets
     logging.info("#### Datasets ####")
 
     logging.info(f"INPUT_SIZE = {INPUT_SIZE}")
@@ -84,6 +82,7 @@ def rgbd_object_ae_unsupervised_training():
     logging.info(f"NB_MAX_TRAIN_SAMPLES = {NB_MAX_TRAIN_SAMPLES}")
     logging.info(f"NB_MAX_VALIDATION_SAMPLES = {NB_MAX_VALIDATION_SAMPLES}")
     logging.info(f"NB_MAX_TEST_SAMPLES = {NB_MAX_TEST_SAMPLES}")
+    logging.info(f"SPLIT = {SPLIT}")
     
     logging.info("## Train Dataset ##")
     train_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
@@ -91,7 +90,8 @@ def rgbd_object_ae_unsupervised_training():
                                       modalities=MODALITIES,
                                       transformation=TRANSFORMATION,
                                       crop_transformation=CROP_TRANSFORMATION,
-                                      nb_max_samples=NB_MAX_TRAIN_SAMPLES)
+                                      nb_max_samples=NB_MAX_TRAIN_SAMPLES,
+                                      split=SPLIT)
     logging.info(f"{len(train_dataset)} samples")
 
     logging.info("## Validation Dataset ##")
@@ -100,19 +100,11 @@ def rgbd_object_ae_unsupervised_training():
                                            modalities=MODALITIES,
                                            transformation=TRANSFORMATION,
                                            crop_transformation=CROP_TRANSFORMATION,
-                                           nb_max_samples=NB_MAX_VALIDATION_SAMPLES)
+                                           nb_max_samples=NB_MAX_VALIDATION_SAMPLES,
+                                           split=SPLIT)
     logging.info(f"{len(validation_dataset)} samples")
-
-    # logging.info("## Test Dataset ##")
-    # test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
-    #                                  mode="test",
-    #                                  modalities=MODALITIES,
-    #                                  transformation=TRANSFORMATION,
-    #                                  crop_transformation=CROP_TRANSFORMATION,
-    #                                  nb_max_samples=NB_MAX_TEST_SAMPLES)
-    # logging.info(f"{len(test_dataset)} samples")
     
-    # Data loaders
+    # Training data loaders
     logging.info("#### Data Loaders ####")
 
     logging.info(f"BATCH_SIZE = {BATCH_SIZE}")
@@ -138,17 +130,11 @@ def rgbd_object_ae_unsupervised_training():
                                         num_workers=NUM_WORKERS,
                                         pin_memory=PIN_MEMORY)
     
-    # logging.info("## Test Data Loader ##")
-    # test_data_loader = DataLoader(test_dataset,
-    #                               batch_size=BATCH_SIZE,
-    #                               shuffle=SHUFFLE,
-    #                               drop_last=DROP_LAST,
-    #                               num_workers=NUM_WORKERS,
-    #                               pin_memory=PIN_MEMORY)
-    
     # Neural network
     logging.info("#### Model ####")
 
+    logging.info(f"WEIGHTS_FREEZING = {WEIGHTS_FREEZING}")
+    logging.info(f"LAST_CHECKPOINT = {LAST_CHECKPOINT}")
     logging.info(f"LOSS_FUNCTION = {LOSS_FUNCTION}")
     logging.info(f"OPTIMIZER_TYPE = {OPTIMIZER_TYPE}")
     logging.info(f"WEIGHTS_FREEZING = {WEIGHTS_FREEZING}")
@@ -159,10 +145,17 @@ def rgbd_object_ae_unsupervised_training():
     logging.info(f"MIN_DELTA = {MIN_DELTA}")
     logging.info(f"DEBUG = {DEBUG}")
 
-    # model = TestAutoencoder().to(DEVICE)
-    # model = TestAutoencoder_skip().to(DEVICE)
-    model = ResNetAutoencoder(WEIGHTS_FREEZING).to(DEVICE)
+    # Create model
+    model = ResNetAutoencoder(WEIGHTS_FREEZING)
 
+    # Load last checkpoint if specified
+    if LAST_CHECKPOINT is not None and os.path.isfile(LAST_CHECKPOINT):
+        model.load_state_dict(torch.load(LAST_CHECKPOINT))
+
+    # Load model to PyTorch device
+    model = model.to(DEVICE)
+
+    # Print model
     logging.info(model)
 
     # Training
@@ -189,15 +182,18 @@ def rgbd_object_ae_unsupervised_training():
     # Testing
     logging.info("#### Testing ####")
 
+    # Testing dataset
     logging.info("## Test Dataset ##")
     test_dataset = RGBDObjectDataset(path="data/RGB-D_Object/rgbd-dataset",
                                      mode="test",
                                      modalities=MODALITIES,
                                      transformation=TRANSFORMATION,
                                      crop_transformation=CROP_TRANSFORMATION,
-                                     nb_max_samples=NB_MAX_TEST_SAMPLES)
+                                     nb_max_samples=NB_MAX_TEST_SAMPLES,
+                                     split=SPLIT)
     logging.info(f"{len(test_dataset)} samples")
 
+    # Testing data loader
     logging.info("## Test Data Loader ##")
     test_data_loader = DataLoader(test_dataset,
                                   batch_size=BATCH_SIZE,
@@ -207,7 +203,7 @@ def rgbd_object_ae_unsupervised_training():
                                   pin_memory=PIN_MEMORY)
 
     # Test model
-    tsne_results_2d, tsne_results_3d, labels_arr = test(model, test_data_loader, DEVICE)
+    tsne_results_2d, tsne_results_3d, labels_arr = test(model, test_data_loader, True, DEVICE)
     
     # End training
     logging.info("#### End ####")

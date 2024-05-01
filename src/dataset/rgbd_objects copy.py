@@ -13,64 +13,25 @@ from ..transformation.random_transformation import RandomTransformation
 DEFAULT_TRANSOFRMATION = torchvision.transforms.Compose([torchvision.transforms.ToTensor()])
 
 
-class RGBDObjectDataset(Dataset):
-    """
-    PyTorch dataset for the RGB-D Objects dataset.
-    Link: https://rgbd-dataset.cs.washington.edu/dataset.html
-    """
-
+class RGBDObjectPreDataset():
+    
     def __init__(self, path, mode, class_names=None, modalities=["rgb"],
-                 transformation=DEFAULT_TRANSOFRMATION, crop_transformation=None,
-                 train_percentage=0.6, validation_percentage=0.2, test_percentage=0.2,
-                 nb_max_samples=None, split=None,
-                 debug=False):
-        """
-        Initialise RGBDObjectDataset instance.
-
-        Parameters
-        ----------
-        path : str
-            Path to the dataset
-        mode : str
-            Dataset use: "train", "validation" or "test"
-        class_names : List[str], optional
-            Name of the class to load data from, by default None
-        modalities : list, optional
-            Modalities to load: "rgb", "depth", "mask", "loc", by default ["rgb"]
-        transformation : torchvision.transforms.Compose, optional
-            Transformation to apply to image modalities, by default DEFAULT_TRANSOFRMATION
-        crop_transformation : torchvision.transforms.Compose, optional
-            Additional custom crop transformation to apply to image modalities, by default None
-        train_percentage : float, optional
-            Percentage of training images , by default 0.6
-        validation_percentage : float, optional
-            Percentage of validation images , by default 0.2
-        test_percentage : float, optional
-            Percentage of test images , by default 0.2
-        nb_max_samples : int, optional
-            Maximum number of samples in the dataset, by default None
-        debug : bool
-            Debug flag for verbose mode, by default False 
-        """
-        super().__init__()
+                 train_percentage=0.6, validation_percentage=0.2, test_percentage=0.2, nb_max_smaples=None,
+                 output_path=None):
         self.path = path
 
-        self.debug = debug
-
         self.mode = mode
-        self.modalities = modalities
         self.class_names = class_names
-
-        self.transformation = transformation
-        if self.transformation is None:
-            self.transformation = DEFAULT_TRANSOFRMATION
-        self.crop_transformation = crop_transformation
+        self.modalities = modalities
 
         self.train_percentage = train_percentage
         self.validation_percentage = validation_percentage
         self.test_percentage = test_percentage
-        self.nb_max_samples = nb_max_samples
-        self.split = split
+        self.nb_max_samples = nb_max_smaples
+
+        self.output_path = output_path
+        if self.output_path is None:
+            self.output_path = "dataset"
 
         self.rgb_flag = "rgb" in self.modalities
         self.depth_flag = "depth" in self.modalities
@@ -82,29 +43,19 @@ class RGBDObjectDataset(Dataset):
         self.x = []
         self.y = []
         # self.removed = []
+
+        self.nb_samples = 0
         
         self._create_labels_dict()
         self._load_data()
 
-        self.x = np.array(self.x)
-        self.y = np.array(self.y)
-
-    def __str__(self):
-        return (f"RGBDObjectDataset(path={self.path}, mode={self.mode}, class_names={self.class_names}, modalities={self.modalities}, "
-                f"transformation={self.transformation}, crop_transformation={self.crop_transformation}, "
-                f"train_percentage={self.train_percentage}, validation_percentage={self.validation_percentage}, test_percentage={self.test_percentage}, "
-                f"nb_max_samples={self.nb_max_samples}, split={self.split})")
-    
-    def __len__(self):
-        return len(self.y)
-    
     def _create_labels_dict(self):
         classes = os.listdir(self.path)
         classes = [c for c in classes if os.path.isdir(os.path.join(self.path, c))]
         classes = sorted(classes)
         self.class_dict = {c: i for i, c in enumerate(classes)}
         return self.class_dict
-    
+
     def _load_data(self):
         disc = ["depth", "mask", "loc"]
 
@@ -176,16 +127,8 @@ class RGBDObjectDataset(Dataset):
         
         assert len(self.x) == len(self.y)
 
-        # Shuffle data in order to have multiple classes
+        # Shuffle data
         x_and_y = list(zip(self.x, self.y))
-        if self.split is not None:
-            size = len(x_and_y)
-            if self.split == 0:
-                x_and_y = x_and_y[:int(size/2)]
-            elif self.split == 1:
-                x_and_y = x_and_y[int(size/2):]
-            else:
-                raise ValueError(f"Invalid split value.")
         random.shuffle(x_and_y)
 
         # Reduce the number of samples to the specified number
@@ -194,12 +137,112 @@ class RGBDObjectDataset(Dataset):
 
         self.x = [x for x,y in x_and_y]
         self.y = [y for x,y in x_and_y]
-
+        
         assert len(self.x) == len(self.y)
         
         # print(f"Removed following samples from dataset because of missing data: {self.removed}")
         # print(f"Number of samples in the dataset: {len(self.x)} | {len(self.y)}")
         # print(f"Samples in the dataset: {self.x}")
+
+        with open(self.output_path + f"_{self.mode}_data", "w") as f:
+            f.write("\n".join(self.x))
+
+        with open(self.output_path + f"_{self.mode}_labels", "w") as f:
+            f.write("\n".join(map(str, self.y)))
+
+
+class RGBDObjectDataset(Dataset):
+    """
+    PyTorch dataset for the RGB-D Objects dataset.
+    Link: https://rgbd-dataset.cs.washington.edu/dataset.html
+    """
+
+    def __init__(self, path, list_path, mode, class_names=None, modalities=["rgb"],
+                 transformation=DEFAULT_TRANSOFRMATION, crop_transformation=None,
+                 train_percentage=0.6, validation_percentage=0.2, test_percentage=0.2, nb_max_samples=None,
+                 debug=False):
+        """
+        Initialise RGBDObjectDataset instance.
+
+        Parameters
+        ----------
+        path : str
+            Path to the dataset
+        mode : str
+            Dataset use: "train", "validation" or "test"
+        class_names : List[str], optional
+            Name of the class to load data from, by default None
+        modalities : list, optional
+            Modalities to load: "rgb", "depth", "mask", "loc", by default ["rgb"]
+        transformation : torchvision.transforms.Compose, optional
+            Transformation to apply to image modalities, by default DEFAULT_TRANSOFRMATION
+        crop_transformation : torchvision.transforms.Compose, optional
+            Additional custom crop transformation to apply to image modalities, by default None
+        train_percentage : float, optional
+            Percentage of training images , by default 0.6
+        validation_percentage : float, optional
+            Percentage of validation images , by default 0.2
+        test_percentage : float, optional
+            Percentage of test images , by default 0.2
+        nb_max_samples : int, optional
+            Maximum number of samples in the dataset, by default None
+        debug : bool
+            Debug flag for verbose mode, by default False 
+        """
+        super().__init__()
+        self.path = path
+        self.list_path = list_path
+
+        self.debug = debug
+
+        self.mode = mode
+        self.class_names = class_names
+        self.modalities = modalities
+
+        self.transformation = transformation
+        if self.transformation is None:
+            self.transformation = DEFAULT_TRANSOFRMATION
+        self.crop_transformation = crop_transformation
+
+        self.train_percentage = train_percentage
+        self.validation_percentage = validation_percentage
+        self.test_percentage = test_percentage
+        self.nb_max_samples = nb_max_samples
+
+        self.rgb_flag = "rgb" in self.modalities
+        self.depth_flag = "depth" in self.modalities
+        self.mask_flag = "mask" in self.modalities or isinstance(self.crop_transformation, ObjectCrop)
+        self.loc_flag = "loc" in self.modalities or isinstance(self.crop_transformation, RandomCrop)
+
+        self.class_dict = None
+
+        self.x = []
+        self.y = []
+        # self.removed = []
+        
+        self._create_labels_dict()
+        self._load_data()
+
+    def __str__(self):
+        return (f"RGBDObjectDataset(path={self.path}, mode={self.mode}, class_names={self.class_names}, modalities={self.modalities}, "
+                f"transformation={self.transformation}, crop_transformation={self.crop_transformation}, "
+                f"train_percentage={self.train_percentage}, validation_percentage={self.validation_percentage}, test_percentage={self.test_percentage}, nb_max_samples={self.nb_max_samples})")
+    
+    def __len__(self):
+        return len(self.y)
+    
+    def _create_labels_dict(self):
+        classes = os.listdir(self.path)
+        classes = [c for c in classes if os.path.isdir(os.path.join(self.path, c))]
+        classes = sorted(classes)
+        self.class_dict = {c: i for i, c in enumerate(classes)}
+        return self.class_dict
+    
+    def _load_data(self):
+        if not os.path.isfile(self.list_path + f"_{self.mode}_data"):
+            raise ValueError(f"Invalid file path {self.list_path} for data.")
+        if not os.path.isfile(self.list_path + f"_{self.mode}_labels"):
+            raise ValueError(f"Invalid file path {self.list_path} for data.")
 
     def _load_item_data(self, idx, data_path):
 
@@ -233,7 +276,8 @@ class RGBDObjectDataset(Dataset):
                 loc_y = int(loc_y)
 
         # Label
-        label = self.y[idx]
+        with open(self.list_path + f"_{self.mode}_labels", "r") as f:
+            label = int(f.readlines()[idx])
 
         # Crop transformation
         if self.crop_transformation is not None:
@@ -243,10 +287,13 @@ class RGBDObjectDataset(Dataset):
     
     def __getitem__(self, idx):
         # print(f"Get data for sample {idx}: {self.x[idx]} from dataset {self}")
+        with open(self.list_path + f"_{self.mode}_data", "r") as f:
+            data = int(f.readlines()[idx])
+
         data_path = os.path.join(self.path,
-                                 "_".join(self.x[idx].split("_")[:-3]),
-                                 "_".join(self.x[idx].split("_")[:-2]),
-                                 self.x[idx])
+                                 "_".join(data.split("_")[:-3]),
+                                 "_".join(data.split("_")[:-2]),
+                                 data)
         
         rgb, depth, mask, loc_x, loc_y, label = self._load_item_data(idx, data_path)
 
@@ -257,8 +304,7 @@ class RGBDObjectDataset_Supervised_Contrast(RGBDObjectDataset):
 
     def __init__(self, path, mode, class_names=None, modalities=["rgb"],
                  transformation=DEFAULT_TRANSOFRMATION, crop_transformation=None,
-                 train_percentage=0.6, validation_percentage=0.2, test_percentage=0.2,
-                 nb_max_samples=None, split=None):
+                 train_percentage=0.6, validation_percentage=0.2, test_percentage=0.2, nb_max_samples=None):
         """
         PyTorch dataset for the RGB-D Objects dataset.
         Task: supervised learning with contrastive learning.
@@ -288,13 +334,12 @@ class RGBDObjectDataset_Supervised_Contrast(RGBDObjectDataset):
         nb_max_samples : int, optional
             Maximum number of samples in the dataset, by default None
         """
-        super().__init__(path, mode, class_names, modalities, transformation, crop_transformation, train_percentage, validation_percentage, test_percentage, nb_max_samples, split)
+        super().__init__(path, mode, class_names, modalities, transformation, crop_transformation, train_percentage, validation_percentage, test_percentage, nb_max_samples)
 
     def __str__(self):
         return (f"RGBDObjectDataset_Supervised_Contrast(path={self.path}, mode={self.mode}, class_names={self.class_names}, modalities={self.modalities}, "
                 f"transformation={self.transformation}, crop_transformation={self.crop_transformation}, "
-                f"train_percentage={self.train_percentage}, validation_percentage={self.validation_percentage}, test_percentage={self.test_percentage}, "
-                f"nb_max_samples={self.nb_max_samples}, split={self.split})")
+                f"train_percentage={self.train_percentage}, validation_percentage={self.validation_percentage}, test_percentage={self.test_percentage}, nb_max_samples={self.nb_max_samples})")
     
     def __getitem__(self, p_idx_1):
 
@@ -376,8 +421,7 @@ class RGBDObjectDataset_Unsupervised_Contrast(RGBDObjectDataset):
     def __str__(self):
         return (f"RGBDObjectDataset_Unsupervised_Contrast(path={self.path}, mode={self.mode}, class_names={self.class_names}, modalities={self.modalities}, "
                 f"transformation={self.transformation}, crop_transformation={self.crop_transformation}, "
-                f"train_percentage={self.train_percentage}, validation_percentage={self.validation_percentage}, test_percentage={self.test_percentage}, "
-                f"nb_max_samples={self.nb_max_samples}, split={self.split})")
+                f"train_percentage={self.train_percentage}, validation_percentage={self.validation_percentage}, test_percentage={self.test_percentage}, nb_max_samples={self.nb_max_samples})")
         
     def __getitem__(self, p_idx_1):
 

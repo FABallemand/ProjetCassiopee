@@ -72,6 +72,8 @@ nohup python3 -u main.py &
 # https://stackoverflow.com/questions/17385794/how-to-get-the-process-id-to-kill-a-nohup-process
 
 sudo reboot now
+
+sudo sync; echo 1 > /proc/sys/vm/drop_caches
 ```
 
 ## 🗂️ Dataset
@@ -105,4 +107,76 @@ sudo reboot now
 - Log confusion matrix during training
 
 ## Notes
-- RGB-D Object: 
+- RGB-D Object: Improve pre-dataset for more randomness
+
+BATCH_SIZE = 10
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 510.54       Driver Version: 510.54       CUDA Version: 11.6     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  NVIDIA GeForce ...  Off  | 00000000:00:0B.0 Off |                  N/A |
+|  0%   58C    P2    57W / 280W |   2451MiB / 11264MiB |      0%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|    0   N/A  N/A      1156      G   /usr/lib/xorg/Xorg                  9MiB |
+|    0   N/A  N/A      1238      G   /usr/bin/gnome-shell                2MiB |
+|    0   N/A  N/A     44343      C   python3                          1579MiB | # No Weight Freezing
+|    0   N/A  N/A     44428      C   python3                           855MiB | # Weight Freezing
++-----------------------------------------------------------------------------+
+
+BATCH_SIZE = 20
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 510.54       Driver Version: 510.54       CUDA Version: 11.6     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  NVIDIA GeForce ...  Off  | 00000000:00:0B.0 Off |                  N/A |
+|  0%   60C    P2    57W / 280W |   2625MiB / 11264MiB |     12%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|    0   N/A  N/A      1156      G   /usr/lib/xorg/Xorg                  9MiB |
+|    0   N/A  N/A      1238      G   /usr/bin/gnome-shell                2MiB |
+|    0   N/A  N/A     49612      C   python3                          1753MiB | # No Weight Freezing
+|    0   N/A  N/A     50641      C   python3                           855MiB | # Weight Freezing
++-----------------------------------------------------------------------------+
+
+BATCH_SIZE = 50
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 510.54       Driver Version: 510.54       CUDA Version: 11.6     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  NVIDIA GeForce ...  Off  | 00000000:00:0B.0 Off |                  N/A |
+| 28%   58C    P2    75W / 280W |   2685MiB / 11264MiB |      0%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|    0   N/A  N/A      1156      G   /usr/lib/xorg/Xorg                  9MiB |
+|    0   N/A  N/A      1238      G   /usr/bin/gnome-shell                2MiB |
+|    0   N/A  N/A     51644      C   python3                          1813MiB | # No Weight Freezing
+|    0   N/A  N/A     52059      C   python3                           855MiB | # Weight Freezing
++-----------------------------------------------------------------------------+

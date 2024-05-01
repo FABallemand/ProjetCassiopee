@@ -8,7 +8,15 @@ from ....train import create_optimizer
 from ....plot.reconstruction_plot import reconstruction_plot
 
 
-def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, device, results_dir, debug=False):
+def train_one_epoch(
+        model,
+        data_loader,
+        loss_function,
+        optimizer,
+        epoch,
+        device,
+        results_dir,
+        debug=False):
 
     # Enable training
     model.train(True)
@@ -58,9 +66,8 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, device,
             logging.info(f"    Batch {i:8}/{len(data_loader)}: loss={loss:.4f}")
 
             # Print memory usage
-            if debug:
-                logging.debug(f"        RAM: {psutil.virtual_memory()[2]} % | {psutil.virtual_memory()[3] / 1000000000} GB")
-                logging.debug(f"        VRAM: {torch.cuda.memory_allocated() / 1000000000} / {torch.cuda.max_memory_allocated() / 1000000000}")
+            logging.debug(f"        RAM: {psutil.virtual_memory()[2]} % | {psutil.virtual_memory()[3] / 1000000000} GB")
+            logging.debug(f"        VRAM: {torch.cuda.memory_allocated() / 1000000000} / {torch.cuda.max_memory_allocated() / 1000000000}")
 
         # Save model and plot reconstruction
         if i % 100 == 0 and i != 0:
@@ -72,25 +79,30 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, device,
                                 rgb.shape[0],
                                 os.path.join(results_dir, f"reconstruction_epoch_{epoch}_batch_{i}"))
 
-        del rgb
-        del depth
-        del mask
-        del loc_x
-        del loc_y
-        del label
+        # Manually delete data
+        del rgb, depth, mask, loc_x, loc_y, label
+        del batch
+        del encoded, decoded
+        del loss
 
         # Clear cache
         if device != torch.device("cpu"):
             logging.debug("Clear GPU cache")
             torch.cuda.empty_cache()
 
-    # Compute validation accuracy and loss
+    # Compute training loss
     train_loss /= (i + 1) # Average loss over all batches of the epoch
     
     return train_loss
 
 
-def evaluate(model, data_loader, loss_function, device):
+def evaluate(
+        model,
+        data_loader,
+        loss_function,
+        epoch,
+        device,
+        results_dir):
 
     # Initialise losses
     validation_loss = 0.0
@@ -120,14 +132,21 @@ def evaluate(model, data_loader, loss_function, device):
             # Update batch loss
             validation_loss += loss.item()
         
-        # Plot reconstruction
-        # reconstruction_plot(rgb.detach().cpu(),
-        #                     decoded.detach().cpu(),
-        #                     rgb.shape[0],
-        #                     os.path.join(results_dir, f"reconstruction_epoch_{epoch}_batch_{i}"))
+            # Plot reconstruction
+            if i == 0:
+                reconstruction_plot(rgb.detach().cpu(),
+                                    decoded.detach().cpu(),
+                                    rgb.shape[0],
+                                    os.path.join(results_dir, f"reconstruction_validation_{epoch}"))
 
-    # Compute validation accuracy and loss
-    validation_loss /= (i + 1) # Average loss over all batches of the epoch
+            # Manually delete data
+            del rgb, depth, mask, loc_x, loc_y, label
+            del batch
+            del encoded, decoded
+            del loss
+
+    # Compute validation loss
+    validation_loss /= (i + 1) # Average loss over all batches
 
     return validation_loss
 
@@ -172,10 +191,10 @@ def train(
                     train_losses.append(train_loss)
                     
                     # Print memory usage
-                    logging.debug(f"RAM: {psutil.virtual_memory()[2]} % | {psutil.virtual_memory()[3] / 1000000000} GB")
-                    logging.debug(f"VRAM: {torch.cuda.memory_allocated() / 1000000000} / {torch.cuda.max_memory_allocated() / 1000000000}")
+                    # logging.debug(f"RAM: {psutil.virtual_memory()[2]} % | {psutil.virtual_memory()[3] / 1000000000} GB")
+                    # logging.debug(f"VRAM: {torch.cuda.memory_allocated() / 1000000000} / {torch.cuda.max_memory_allocated() / 1000000000}")
 
-                    # # Print gradients for each parameter
+                    # Print gradients for each parameter
                     # for name, param in model.named_parameters():
                     #     if param.grad is not None:
                     #         logging.debug(f'{name}.grad: mean={param.grad.mean()} | std={param.grad.std()}')
@@ -192,7 +211,7 @@ def train(
                 torch.cuda.empty_cache()
 
             # Evaluate model
-            validation_loss = evaluate(model, validation_data_loader, loss_function, device)
+            validation_loss = evaluate(model, validation_data_loader, loss_function, epoch, device, results_dir)
             validation_losses.append(validation_loss)
 
             # Clear cache

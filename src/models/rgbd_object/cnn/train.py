@@ -6,7 +6,16 @@ import torch
 from ....train import create_optimizer
 
 
-def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, device, results_dir, debug=False):
+def train_one_epoch(
+        model,
+        data_loader,
+        loss_function,
+        optimizer,
+        epoch,
+        device,
+        results_dir,
+        debug=False):
+    logging.debug(f"    [train_one_epoch]")
 
     # Enable training
     model.train(True)
@@ -20,8 +29,10 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, device,
 
     # Pass over all batches
     for i, batch in enumerate(data_loader):
+        logging.debug(f"        batch {i}")
 
         # Load and prepare batch
+        logging.debug(f"        load data")
         rgb, depth, mask, loc_x, loc_y, label = batch
         rgb = rgb.to(device)
         # depth = depth.to(device)
@@ -34,10 +45,11 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, device,
         optimizer.zero_grad()
 
         # Make predictions for batch
+        logging.debug(f"        inference")
         output = model(rgb)
 
         if output.isnan().any():
-            logging.debug("output contains NaN")
+            logging.debug(f"        output contains NaN")
 
         # Update accuracy variables
         _, predicted = torch.max(output.data, 1)
@@ -49,12 +61,14 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, device,
         loss = loss_function(output, label)
 
         if loss.isnan().any():
-            logging.debug("loss contains NaN")
+            logging.debug(f"        loss contains NaN")
 
         # Compute gradient loss
+        logging.debug(f"        back prop.")
         loss.backward()
 
         # Update weights
+        logging.debug(f"        gradient descent")
         optimizer.step()
 
         # Update losses
@@ -66,20 +80,18 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, device,
             logging.info(f"    Batch {i:8}/{len(data_loader)}: accuracy={batch_correct / label.size(0):.4f} | loss={loss:.4f}")
 
             # Print memory usage
-            if debug:
-                logging.debug(f"        RAM: {psutil.virtual_memory()[2]} % | {psutil.virtual_memory()[3] / 1000000000} GB")
-                logging.debug(f"        VRAM: {torch.cuda.memory_allocated() / 1000000000} / {torch.cuda.max_memory_allocated() / 1000000000}")
+            logging.debug(f"        RAM: {psutil.virtual_memory()[2]} % | {psutil.virtual_memory()[3] / 1000000000} GB")
+            logging.debug(f"        VRAM: {torch.cuda.memory_allocated() / 1000000000} / {torch.cuda.max_memory_allocated() / 1000000000}")
 
         # Save model
         if i % 100 == 0 and i != 0:
             torch.save(model.state_dict(), os.path.join(results_dir, f"weights_epoch_{epoch}_batch_{i}"))
 
-        del rgb
-        del depth
-        del mask
-        del loc_x
-        del loc_y
-        del label
+        # Manually delete data
+        del rgb, depth, mask, loc_x, loc_y, label
+        del batch
+        del output
+        del _, predicted, batch_correct, loss
 
         # Clear cache
         if device != torch.device("cpu"):
@@ -93,7 +105,13 @@ def train_one_epoch(model, data_loader, loss_function, optimizer, epoch, device,
     return train_accuracy, train_loss
 
 
-def evaluate(model, data_loader, loss_function, device):
+def evaluate(model,
+             data_loader,
+             loss_function,
+             epoch,
+             device,
+             results_dir):
+    logging.info(f"    [Validation]")
 
     # Initialise accuracy variables
     total = 0
@@ -124,13 +142,28 @@ def evaluate(model, data_loader, loss_function, device):
             # Update accuracy variables
             _, predicted = torch.max(output.data, 1)
             total += len(label)
-            correct = (predicted == label).sum().item()
+            batch_correct = (predicted == label).sum().item()
+            correct += batch_correct
 
             # Compute loss
             loss = loss_function(output, label)
 
+            if loss.isnan().any():
+                logging.debug("loss contains NaN")
+
             # Update batch loss
             validation_loss += loss.detach().item()
+
+            # Manually delete data
+            del rgb, depth, mask, loc_x, loc_y, label
+            del batch
+            del output
+            del _, predicted, batch_correct, loss
+
+            # Clear cache
+            if device != torch.device("cpu"):
+                logging.debug("Clear GPU cache")
+                torch.cuda.empty_cache()
 
     # Compute validation accuracy and loss
     validation_accuracy = correct / total
@@ -184,10 +217,10 @@ def train(
                     train_losses.append(train_loss)
 
                     # Print memory usage
-                    logging.debug(f"RAM: {psutil.virtual_memory()[2]} % | {psutil.virtual_memory()[3] / 1000000000} GB")
-                    logging.debug(f"VRAM: {torch.cuda.memory_allocated() / 1000000000} / {torch.cuda.max_memory_allocated() / 1000000000}")
+                    # logging.debug(f"RAM: {psutil.virtual_memory()[2]} % | {psutil.virtual_memory()[3] / 1000000000} GB")
+                    # logging.debug(f"VRAM: {torch.cuda.memory_allocated() / 1000000000} / {torch.cuda.max_memory_allocated() / 1000000000}")
 
-                    # # Print gradients for each parameter
+                    # Print gradients for each parameter
                     # for name, param in model.named_parameters():
                     #     if param.grad is not None:
                     #         logging.debug(f'{name}.grad: mean={param.grad.mean()} | std={param.grad.std()}')
@@ -205,7 +238,7 @@ def train(
                 torch.cuda.empty_cache()
 
             # Evaluate model
-            validation_accuracy, validation_loss = evaluate(model, validation_data_loader, loss_function, device)
+            validation_accuracy, validation_loss = evaluate(model, validation_data_loader, loss_function, epoch, device, results_dir)
             validation_accuracies.append(validation_accuracy)
             validation_losses.append(validation_loss)
 
@@ -233,6 +266,8 @@ def train(
 
 
 def test(model, test_data_loader, device=torch.device("cpu")):
+    logging.info(f"    [Test]")
+
     # Accuracy variables
     correct = 0
     total = 0

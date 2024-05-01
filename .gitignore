@@ -1,6 +1,9 @@
 # Configuration
 artemis/*
 
+# Tests
+TEST/*
+
 # Results
 *.png
 *.gif
