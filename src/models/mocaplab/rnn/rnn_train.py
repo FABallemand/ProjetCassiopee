@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee")
 from src.setup import setup_python, setup_pytorch
 from src.dataset import MocaplabDatasetRNN
-from rnn import RNN
+from rnn import RNN, RNN_
 from plot_results import plot_results
 from train import *
 
@@ -21,8 +21,8 @@ if __name__=='__main__':
     setup_python()
 
     # Set-up PyTorch
-    DEVICE = setup_pytorch()
-    #DEVICE = torch.device("cpu")
+    #DEVICE = setup_pytorch()
+    DEVICE = torch.device("cpu")
 
     # Dataset parameters
     
@@ -34,10 +34,10 @@ if __name__=='__main__':
     BATCH_SIZE = 4 # Batch size
 
     LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
-    OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
+    OPTIMIZER_TYPE = "Adam"                      # Type of optimizer
 
-    EPOCHS = [32, 16]                       # Number of epochs
-    LEARNING_RATES = [0.0001, 0.00001]           # Learning rates
+    EPOCHS = [32]                           # Number of epochs
+    LEARNING_RATES = [0.0001]          # Learning rates
     
     EARLY_STOPPING = False # Early stopping flag
     PATIENCE = 10          # Early stopping patience
@@ -49,6 +49,7 @@ if __name__=='__main__':
     print("#### Datasets ####")
 
     dataset = MocaplabDatasetRNN(path="self_supervised_learning/dev/ProjetCassiopee/data/mocaplab/Cassiopée_Allbones",
+                                 return_filename=False,
                               padding = True, 
                               train_test_ratio = 8,
                               validation_percentage = 0.01)
@@ -82,7 +83,8 @@ if __name__=='__main__':
     
     # Create neural network
     print("#### Model ####")
-    model = RNN(input_size=237, hidden_size=32, num_layers=2, output_size=2).to(DEVICE)
+    model = RNN(input_size=237, hidden_size=64, num_layers=2, output_size=2).to(DEVICE)
+    #model = RNN_(input_size=237).to(DEVICE)
 
     # Save training time start
     start_timestamp = datetime.now()

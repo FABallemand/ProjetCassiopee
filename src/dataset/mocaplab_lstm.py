@@ -4,9 +4,8 @@ import pandas as pd
 import csv
 from torch.utils.data import Dataset
 import numpy as np
-from PIL import Image as im
 
-class MocaplabDatasetRNN(Dataset):
+class MocaplabDatasetLSTM(Dataset):
     """
     PyTorch dataset for the Mocaplab dataset.
     """

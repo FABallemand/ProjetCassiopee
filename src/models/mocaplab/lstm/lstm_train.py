@@ -1,16 +1,14 @@
 import os
 import sys
 from datetime import datetime
-import numpy as np
 
 import torch
 from torch.utils.data import DataLoader
-from torchvision import transforms
 
 sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee")
 from src.setup import setup_python, setup_pytorch
-from src.dataset import MocaplabDatasetFC
-from cnn1D import CNN1D
+from src.dataset import MocaplabDatasetLSTM
+from lstm import LSTM
 from plot_results import plot_results
 from train import *
 
@@ -23,8 +21,8 @@ if __name__=='__main__':
     setup_python()
 
     # Set-up PyTorch
-    DEVICE = setup_pytorch()
-    #DEVICE = torch.device("cpu")
+    #DEVICE = setup_pytorch()
+    DEVICE = torch.device("cpu")
 
     # Dataset parameters
     
@@ -33,13 +31,13 @@ if __name__=='__main__':
     NB_MAX_TEST_SAMPLES = None
 
     # Training parameters
-    BATCH_SIZE = 2 # Batch size
+    BATCH_SIZE = 4 # Batch size
 
     LOSS_FUNCTION = torch.nn.CrossEntropyLoss() # Loss function
-    OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
+    OPTIMIZER_TYPE = "Adam"                      # Type of optimizer
 
-    EPOCHS = [32]                     # Number of epochs
-    LEARNING_RATES = [0.001] # Learning rates
+    EPOCHS = [64]                           # Number of epochs
+    LEARNING_RATES = [0.0005]          # Learning rates
     
     EARLY_STOPPING = False # Early stopping flag
     PATIENCE = 10          # Early stopping patience
@@ -50,7 +48,8 @@ if __name__=='__main__':
     # Datasets
     print("#### Datasets ####")
 
-    dataset = MocaplabDatasetFC(path="self_supervised_learning/dev/ProjetCassiopee/data/mocaplab/Cassiopée_Allbones",
+    dataset = MocaplabDatasetLSTM(path="self_supervised_learning/dev/ProjetCassiopee/data/mocaplab/Cassiopée_Allbones",
+                                 return_filename=False,
                               padding = True, 
                               train_test_ratio = 8,
                               validation_percentage = 0.01)
@@ -84,7 +83,14 @@ if __name__=='__main__':
     
     # Create neural network
     print("#### Model ####")
-    model = CNN1D(nb_classes=2).to(DEVICE)      # dataset.max_length*237
+    
+    #model = LSTM(input_size=237, hidden_size = 16, num_layers = 2, output_size = 2).to(DEVICE)
+    # -> accuracy of 88%, first model to actually learn // batch size = 8, Adam, lr = 0.0005
+
+    #model = LSTM(input_size=237, hidden_size = 16, num_layers = 2, output_size = 2).to(DEVICE)
+    # -> accuracy of 97% // batch size = 4, Adam, lr = 0.0005
+
+    model = LSTM(input_size=237, hidden_size = 16, num_layers = 2, output_size = 2).to(DEVICE)
 
     # Save training time start
     start_timestamp = datetime.now()
@@ -124,7 +130,7 @@ if __name__=='__main__':
                  test_acc, test_confusion_matrix, stop_timestamp, model_path)
     
     # Save model
-    torch.save(model.state_dict(), "self_supervised_learning/dev/ProjetCassiopee/src/models/mocaplab/cnn1D/saved_models/" + model_path + ".ckpt")
+    torch.save(model.state_dict(), "self_supervised_learning/dev/ProjetCassiopee/src/models/mocaplab/lstm/saved_models/" + model_path + ".ckpt")
     
     # End training
     print("#### End ####")

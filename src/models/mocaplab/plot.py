@@ -65,7 +65,7 @@ def plot_animation(i, data, label, prediction, nom):
     lines = [ax.plot([], [], [], '-', color='red')[0] for _ in range(num_lines)]
 
     # Function to update the scatter plot
-    def update(frame):                                             
+    def update(frame):    
         # Get the coordinates for the current frame
         frame_coordinates = (x_data[frame], z_data[frame], y_data[frame])
 
