@@ -1,5 +1,6 @@
 # Configuration
 artemis/*
+.vscode/*
 
 # Tests
 TEST/*

@@ -74,6 +74,8 @@ nohup python3 -u main.py &
 sudo reboot now
 
 sudo sync; echo 1 > /proc/sys/vm/drop_caches
+
+pkill -f <pattern>
 ```
 
 ## 🗂️ Dataset
