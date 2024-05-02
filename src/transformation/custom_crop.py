@@ -167,7 +167,7 @@ class ObjectCrop(object):
         # Retrieve input shape
         _, input_height, input_width = rgb.shape
         
-        # Retrive min and max coordinates of object
+        # Retrieve min and max coordinates of object
         mask_coord = (mask[0,:,:] == 1).nonzero()
         min_x = torch.min(mask_coord[:,1])
         max_x = torch.max(mask_coord[:,1])
@@ -175,10 +175,10 @@ class ObjectCrop(object):
         max_y = torch.max(mask_coord[:,0])
 
         # Add padding
-        min_x -= max(0, self.padding[0])
-        max_x += min(input_width, self.padding[0])
-        min_y -= max(0, self.padding[1])
-        max_y += min(input_height, self.padding[1])
+        min_x = max(0, min_x - self.padding[0])
+        max_x = min(input_width, max_x + self.padding[0])
+        min_y = max(0, min_y - self.padding[1])
+        max_y = min(input_height, max_y + self.padding[1])
 
         # Compute crop width and height
         crop_width = max_x - min_x
