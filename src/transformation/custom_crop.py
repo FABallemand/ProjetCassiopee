@@ -64,28 +64,33 @@ class RandomCrop(object):
         _, input_height, input_width = rgb.shape
         
         # Random offsets
-        x = loc_x
-        y = loc_y
-        offset_x = -1
-        offset_y = -1
-        while True:
-            offset_x = random.randint(self.offset_range[0], self.offset_range[1])
-            offset_y = random.randint(self.offset_range[0], self.offset_range[1])
-            x = loc_x + offset_x
-            y = loc_y + offset_y
-            if (x >= 0 and x + self.output_size[0] < input_width and
-                y >= 0 and y + self.output_size[1] < input_height ):
-                break
+        # x = loc_x
+        # y = loc_y
+        # offset_x = -1
+        # offset_y = -1
+        # while True:
+        #     offset_x = random.randint(self.offset_range[0], self.offset_range[1])
+        #     offset_y = random.randint(self.offset_range[0], self.offset_range[1])
+        #     x = loc_x + offset_x
+        #     y = loc_y + offset_y
+        #     if (x >= 0 and x + self.output_size[0] < input_width and
+        #         y >= 0 and y + self.output_size[1] < input_height ):
+        #         break
+        x = random.randint(max(0, loc_x + self.offset_range[0]),
+                           min(input_width - self.output_size[0], loc_x + self.offset_range[1]))
+        y = random.randint(max(0, loc_y + self.offset_range[0]),
+                           min(input_height - self.output_size[1], loc_y + self.offset_range[1]))
 
         # Crop images
         if not isinstance(rgb, int):
-            rgb = transforms.functional.crop(rgb, y, x, self.output_size[0], self.output_size[1])
+            rgb = transforms.functional.crop(rgb, y, x, self.output_size[1], self.output_size[0])
         if not isinstance(depth, int):
-            depth = transforms.functional.crop(depth, y, x, self.output_size[0], self.output_size[1])
+            depth = transforms.functional.crop(depth, y, x, self.output_size[1], self.output_size[0])
         if not isinstance(mask, int):
-            mask = transforms.functional.crop(mask, y, x, self.output_size[0], self.output_size[1])
+            mask = transforms.functional.crop(mask, y, x, self.output_size[1], self.output_size[0])
 
-        return rgb, depth, mask, -offset_x, -offset_y
+        # return rgb, depth, mask, -offset_x, -offset_y
+        return rgb, depth, mask, abs(x - loc_x), abs(y - loc_y)
     
 
 class ObjectCrop(object):
@@ -180,18 +185,22 @@ class ObjectCrop(object):
         crop_height = max_y - min_y
         
         # Random offsets
-        x = min_x
-        y = min_y
-        offset_x = -1
-        offset_y = -1
-        while True:
-            offset_x = random.randint(self.offset_range[0], self.offset_range[1])
-            offset_y = random.randint(self.offset_range[0], self.offset_range[1])
-            x = min_x + offset_x
-            y = min_y + offset_y
-            if (x >= 0 and x + crop_width < input_width and
-                y >= 0 and y + crop_height < input_height):
-                break
+        # x = min_x
+        # y = min_y
+        # offset_x = -1
+        # offset_y = -1
+        # while True:
+        #     offset_x = random.randint(self.offset_range[0], self.offset_range[1])
+        #     offset_y = random.randint(self.offset_range[0], self.offset_range[1])
+        #     x = min_x + offset_x
+        #     y = min_y + offset_y
+        #     if (x >= 0 and x + crop_width < input_width and
+        #         y >= 0 and y + crop_height < input_height):
+        #         break
+        x = random.randint(max(0, min_x + self.offset_range[0]),
+                           min(input_width - crop_width, min_x + self.offset_range[1]))
+        y = random.randint(max(0, min_y + self.offset_range[0]),
+                           min(input_height - crop_height, min_y + self.offset_range[1]))
 
         # Crop image
         if not isinstance(rgb, int):
@@ -210,4 +219,5 @@ class ObjectCrop(object):
             if not isinstance(mask, int):
                 mask = self.resize(mask)
 
-        return rgb, depth, mask, max(0, -offset_x), max(0, -offset_y)
+        # return rgb, depth, mask, max(0, -offset_x), max(0, -offset_y)
+        return rgb, depth, mask, abs(x - min_x), abs(y - min_y)

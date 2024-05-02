@@ -15,7 +15,7 @@ def train_one_epoch(
         device,
         results_dir,
         debug=False):
-    logging.debug(f"    [train_one_epoch]")
+    logging.debug("    [train_one_epoch]")
 
     # Enable training
     model.train(True)
@@ -45,11 +45,11 @@ def train_one_epoch(
         optimizer.zero_grad()
 
         # Make predictions for batch
-        logging.debug(f"        inference")
+        logging.debug("        inference")
         output = model(rgb)
 
         if output.isnan().any():
-            logging.debug(f"        output contains NaN")
+            logging.debug("        output contains NaN")
 
         # Update accuracy variables
         _, predicted = torch.max(output.data, 1)
@@ -61,14 +61,14 @@ def train_one_epoch(
         loss = loss_function(output, label)
 
         if loss.isnan().any():
-            logging.debug(f"        loss contains NaN")
+            logging.debug("        loss contains NaN")
 
         # Compute gradient loss
-        logging.debug(f"        back prop.")
+        logging.debug("        back prop.")
         loss.backward()
 
         # Update weights
-        logging.debug(f"        gradient descent")
+        logging.debug("        gradient descent")
         optimizer.step()
 
         # Update losses
@@ -95,7 +95,7 @@ def train_one_epoch(
 
         # Clear cache
         if device != torch.device("cpu"):
-            logging.debug("Clear GPU cache")
+            logging.debug("        clear GPU cache")
             torch.cuda.empty_cache()
 
     # Compute train accuracy and loss
@@ -111,7 +111,7 @@ def evaluate(model,
              epoch,
              device,
              results_dir):
-    logging.info(f"    [Validation]")
+    logging.info("    [Validation]")
 
     # Initialise accuracy variables
     total = 0
@@ -162,7 +162,7 @@ def evaluate(model,
 
             # Clear cache
             if device != torch.device("cpu"):
-                logging.debug("Clear GPU cache")
+                logging.debug("        clear GPU cache")
                 torch.cuda.empty_cache()
 
     # Compute validation accuracy and loss
@@ -234,7 +234,7 @@ def train(
 
             # Clear cache
             if device != torch.device("cpu"):
-                logging.debug("Clear GPU cache")
+                logging.debug("clear GPU cache")
                 torch.cuda.empty_cache()
 
             # Evaluate model
@@ -244,7 +244,7 @@ def train(
 
             # Clear cache
             if device != torch.device("cpu"):
-                logging.debug("Clear GPU cache")
+                logging.debug("clear GPU cache")
                 torch.cuda.empty_cache()
 
             logging.info(f"Train:      accuracy={train_accuracy:.8f}      | loss={train_loss:.8f}")
