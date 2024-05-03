@@ -169,10 +169,10 @@ class ObjectCrop(object):
         
         # Retrieve min and max coordinates of object
         mask_coord = (mask[0,:,:] == 1).nonzero()
-        min_x = torch.min(mask_coord[:,1])
-        max_x = torch.max(mask_coord[:,1])
-        min_y = torch.min(mask_coord[:,0])
-        max_y = torch.max(mask_coord[:,0])
+        min_x = int(torch.min(mask_coord[:,1]))
+        max_x = int(torch.max(mask_coord[:,1]))
+        min_y = int(torch.min(mask_coord[:,0]))
+        max_y = int(torch.max(mask_coord[:,0]))
 
         # Add padding
         min_x = max(0, min_x - self.padding[0])
