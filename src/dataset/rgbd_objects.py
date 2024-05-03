@@ -1,4 +1,5 @@
 import os
+import logging
 import random
 import numpy as np
 import cv2
@@ -170,14 +171,14 @@ class RGBDObjectDataset(Dataset):
                     self.y += [self.class_dict[c]] * len(data[nb_train + nb_validation:])
                     # print(f"TEST -> {len(data[nb_train + nb_validation:])} | {nb_test} | {len(self.x)} | {len(self.y)}")
                 else:
-                    print(f"Invalid dataset mode {self.mode}, loading all images...")
-                    self.x += data
-                    self.y += [self.class_dict[c]] * nb_samples
+                    raise ValueError(f"Invalid dataset mode: {self.mode}")
         
         assert len(self.x) == len(self.y)
 
-        # Shuffle data in order to have multiple classes
+        # Combine data and labels
         x_and_y = list(zip(self.x, self.y))
+
+        # Select split
         if self.split is not None:
             size = len(x_and_y)
             if self.split == 0:
@@ -186,12 +187,15 @@ class RGBDObjectDataset(Dataset):
                 x_and_y = x_and_y[int(size/2):]
             else:
                 raise ValueError(f"Invalid split value.")
+            
+        # Shuffle data in order to have multiple classes
         random.shuffle(x_and_y)
 
         # Reduce the number of samples to the specified number
         if self.nb_max_samples is not None and self.nb_max_samples < len(self.x):
             x_and_y = x_and_y[:self.nb_max_samples]
 
+        # Separate data and labels
         self.x = [x for x,y in x_and_y]
         self.y = [y for x,y in x_and_y]
 
@@ -207,12 +211,16 @@ class RGBDObjectDataset(Dataset):
         rgb = -1
         if self.rgb_flag:
             rgb = cv2.imread(data_path + ".png")
+            if rgb is None:
+                raise Exception(f"Unable to load rgb data from: {data_path + '.png'}")
             rgb = self.transformation(rgb)
 
         # Depth Data
         depth = -1
         if self.depth_flag:
             depth = cv2.imread(data_path + "_depth.png")
+            if depth is None:
+                raise Exception(f"Unable to load depth data from: {data_path + '_depth.png'}")
             depth = self.transformation(depth)
 
         # Mask Data
@@ -220,7 +228,7 @@ class RGBDObjectDataset(Dataset):
         if self.mask_flag:
             mask = cv2.imread(data_path + "_mask.png")
             if mask is None:
-                print(data_path)
+                raise Exception(f"Unable to load mask data from: {data_path + '_mask.png'}")
             mask = self.transformation(mask)
 
         # Location Data
@@ -235,14 +243,18 @@ class RGBDObjectDataset(Dataset):
         # Label
         label = self.y[idx]
 
+        logging.debug(f"{type(rgb)} | {type(depth)} | {type(mask)} | {type(loc_x)} | {type(loc_y)} | {type(label)}")
+
         # Crop transformation
         if self.crop_transformation is not None:
             rgb, depth, mask, loc_x, loc_y = self.crop_transformation(rgb, depth, mask, loc_x, loc_y)
 
+        logging.debug(f"{type(rgb)} | {type(depth)} | {type(mask)} | {type(loc_x)} | {type(loc_y)} | {type(label)}")
+
         return rgb, depth, mask, loc_x, loc_y, label
     
     def __getitem__(self, idx):
-        # print(f"Get data for sample {idx}: {self.x[idx]} from dataset {self}")
+        logging.debug(f"Get data for sample {idx}: {self.x[idx]}")
         data_path = os.path.join(self.path,
                                  "_".join(self.x[idx].split("_")[:-3]),
                                  "_".join(self.x[idx].split("_")[:-2]),
