@@ -243,18 +243,14 @@ class RGBDObjectDataset(Dataset):
         # Label
         label = self.y[idx]
 
-        logging.debug(f"{type(rgb)} | {type(depth)} | {type(mask)} | {type(loc_x)} | {type(loc_y)} | {type(label)}")
-
         # Crop transformation
         if self.crop_transformation is not None:
             rgb, depth, mask, loc_x, loc_y = self.crop_transformation(rgb, depth, mask, loc_x, loc_y)
 
-        logging.debug(f"{type(rgb)} | {type(depth)} | {type(mask)} | {type(loc_x)} | {type(loc_y)} | {type(label)}")
-
         return rgb, depth, mask, loc_x, loc_y, label
     
     def __getitem__(self, idx):
-        logging.debug(f"Get data for sample {idx}: {self.x[idx]}")
+        # logging.debug(f"Get data for sample {idx}: {self.x[idx]}")
         data_path = os.path.join(self.path,
                                  "_".join(self.x[idx].split("_")[:-3]),
                                  "_".join(self.x[idx].split("_")[:-2]),
