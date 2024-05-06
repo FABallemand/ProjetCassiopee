@@ -1,28 +1,23 @@
-import sys
-import pandas as pd
-
 import torch
 from torch.utils.data import DataLoader
 
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.animation import FuncAnimation
 
-sys.path.append("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee/")
-from src.dataset import MocaplabDatasetFC
-from src.setup import setup_python, setup_pytorch
-from src.dataset import MocaplabDatasetFC
-from src.models.mocaplab import MocaplabFC
-from fc.train import *
+from ..setup import setup_python, setup_pytorch
+from ..dataset.mocaplab_fc import MocaplabDatasetFC
+from ..models.mocaplab.fc import MocaplabFC
+from ..models.mocaplab.fc.train import train
 
 
-def plot_animation(i, data, label, prediction, nom):
+def create_animation(data, label, prediction, name, model):
 
-    print(f"i={i}")
     print(f"data={data}")
+    print(f"type(data)={type(data)}")
     print(f"label={label}")
     print(f"prediction={prediction}")
-    print(f"nom={nom}")
+    print(f"name={name}")
+    print(f"model={model}")
 
     # List of points that should appear in different color each frame (list of 100 lists of len 10) 
     points_color_indices = [
@@ -136,8 +131,6 @@ def plot_animation(i, data, label, prediction, nom):
             joints_color_frame.append(points_color_indices[i][j] // 3)
         joints_color.append(joints_color_frame)
 
-    model = "CNN"
-
     data = data.numpy()
     
     x_data = data[:, 0::3]
@@ -220,13 +213,12 @@ def plot_animation(i, data, label, prediction, nom):
     animation = FuncAnimation(fig, update, frames=len(data), blit=True)
     
     # Save the animation as a GIF
-    animation.save(f"/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee/src/visualisation/mocaplab_points_color/{nom}.gif",
+    animation.save(f"/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee/src/visualisation/mocaplab_points_color/{name}.gif",
                    writer='pillow')
     plt.close()
 
 
-if __name__ == "__main__":
-    
+def create_all_animations(results_dir="visualisation_results/mocaplab/supervised"):
     # Begin set-up
     print("#### Set-Up ####")
 
@@ -237,8 +229,7 @@ if __name__ == "__main__":
     DEVICE = setup_pytorch(gpu=False)
 
     print("#### Dataset ####")
-    dataset = MocaplabDatasetFC(path=("/home/self_supervised_learning_gr/self_supervised_learning/dev/"
-                                      "ProjetCassiopee/data/mocaplab/Cassiopée_Allbones"),
+    dataset = MocaplabDatasetFC(path="data/mocaplab/Cassiopée_Allbones",
                                 padding=True, 
                                 train_test_ratio=8,
                                 validation_percentage=0.01)
@@ -249,18 +240,15 @@ if __name__ == "__main__":
                              shuffle=False)
     
     print("#### Model ####")
-    model = MocaplabFC(dataset.max_length * 237).to(DEVICE)
-    model.load_state_dict(torch.load(("/home/self_supervised_learning_gr/self_supervised_learning/dev/"
-                                      "ProjetCassiopee/src/models/mocaplab/fc/saved_models/model_20240325_141951.ckpt"),
-                                     map_location=torch.device("cpu")))
+    model = MocaplabFC(dataset.max_length * 237)
+    model.load_state_dict(torch.load("src/models/mocaplab/fc/saved_models/model_20240325_141951.ckpt"))
     model = model.to(DEVICE)
-    model = model.double()
     
     print("#### Plot ####")
-    for i, batch in enumerate(data_loader) :
+    for i, sample in enumerate(data_loader) :
         
-        print(f"## Batch {i:4} / {len(data_loader)} ##")
-        data, label = batch
+        print(f"## Sample {i:4} / {len(data_loader)} ##")
+        data, label = sample
         data = data.to(DEVICE)
         label = label.to(DEVICE)
     
@@ -274,22 +262,7 @@ if __name__ == "__main__":
         
         data = data.squeeze(0)
         
-        nom = f"{i}_{label}_{predicted}"
-        
-        n0 = 0
-        n1 = 0
-        ndiff = 0
+        name = f"{i}_{label}_{predicted}"
+        create_animation(data, label, predicted, name, type(model))
 
-        if ndiff < 2 and predicted != label :
-            ndiff += 1
-            plot_animation(i, data, label, predicted, nom)
-
-        elif n0 < 2 and label == 0 :
-            n0 += 1
-            plot_animation(i, data, label, predicted, nom)
-
-        elif n1 < 2 and label == 1 :
-            n1 += 1
-            plot_animation(i, data, label, predicted, nom)
-
-    print("#### DONE ####")
+    print("#### End ####")

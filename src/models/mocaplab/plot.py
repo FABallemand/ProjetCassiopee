@@ -85,7 +85,8 @@ def plot_animation(i, data, label, prediction, nom):
     animation = FuncAnimation(fig, update, frames=len(data), blit=True)
     
     # Save the animation as a GIF
-    animation.save(f'self_supervised_learning/dev/ProjetCassiopee/src/visualisation/mocaplab/{nom}.gif', writer='pillow')
+    animation.save(f'/home/self_supervised_learning_gr/dev/ProjetCassiopee/src/visualisation/mocaplab/{nom}.gif',
+                   writer='pillow')
     plt.close()
 
 def plot_animation_no_points(i, data, label, prediction, nom):
@@ -147,7 +148,8 @@ def plot_animation_no_points(i, data, label, prediction, nom):
     animation = FuncAnimation(fig, update, frames=len(data), blit=True)
     
     # Save the animation as a GIF
-    animation.save(f'self_supervised_learning/dev/ProjetCassiopee/src/visualisation/mocaplab/{nom}_noPoints.gif', writer='pillow')
+    animation.save(f'/home/self_supervised_learning_gr/dev/ProjetCassiopee/src/visualisation/mocaplab/{nom}_noPoints.gif',
+                   writer='pillow')
     plt.close()
 
 def plot_frame(i, data, label) :
@@ -173,26 +175,26 @@ def plot_frame(i, data, label) :
     ax.set_zlabel('Y')
     ax.set_title(f'Frame 0, data {i}, label = {label}')
 
-    plt.savefig("self_supervised_learning/dev/ProjetCassiopee/src/visualisation/mocaplab/test.png")
+    plt.savefig("/home/self_supervised_learning_gr/dev/ProjetCassiopee/src/visualisation/mocaplab/test.png")
     plt.close()
 
 if __name__ == "__main__":
     
     print("#### Begin ####")
 
-    DEVICE = torch.device("cpu")
+    DEVICE = setup_pytorch(gpu=False)
 
-    dataset = MocaplabDatasetFC(path="self_supervised_learning/dev/ProjetCassiopee/data/mocaplab/Cassiopée_Allbones",
-                              padding = True, 
-                              train_test_ratio = 8,
-                              validation_percentage = 0.01)
+    dataset = MocaplabDatasetFC(path="/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee/data/mocaplab/Cassiopée_Allbones",
+                                padding = True, 
+                                train_test_ratio = 8,
+                                validation_percentage = 0.01)
     
     data_loader = DataLoader(dataset,
-                            batch_size=1,
-                            shuffle=False)
+                             batch_size=1,
+                             shuffle=False)
     
     model = MocaplabFC(dataset.max_length*237).to(DEVICE)
-    model.load_state_dict(torch.load("self_supervised_learning/dev/ProjetCassiopee/src/models/mocaplab/fc/saved_models/model_20240325_141951.ckpt"))
+    model.load_state_dict(torch.load("/home/self_supervised_learning_gr/dev/ProjetCassiopee/src/models/mocaplab/fc/saved_models/model_20240325_141951.ckpt"))
     model = model.to(DEVICE)
     model = model.double()
     
