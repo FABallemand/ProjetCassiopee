@@ -69,6 +69,8 @@ scp -r /path/to/local/dir user@remotehost:/path/to/remote/dir
 
 nohup python3 -u main.py &
 
+CUDA_LAUNCH_BLOCKING=1 nohup python3 -u main.py &
+
 # https://stackoverflow.com/questions/17385794/how-to-get-the-process-id-to-kill-a-nohup-process
 
 sudo reboot now
