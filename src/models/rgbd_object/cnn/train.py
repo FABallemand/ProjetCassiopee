@@ -294,7 +294,8 @@ def test(model, test_data_loader, device=torch.device("cpu")):
             # Update accuracy variables
             _, predicted = torch.max(output.data, 1)
             total += len(label)
-            correct += (predicted == label).sum().item()
+            batch_correct = (predicted == label).sum().item()
+            correct += batch_correct
 
             # Update confusion matrix variables
             if all_label is None and all_predicted is None:
@@ -303,6 +304,17 @@ def test(model, test_data_loader, device=torch.device("cpu")):
             else:
                 all_label = torch.cat((all_label, label))
                 all_predicted = torch.cat((all_predicted, predicted))
+
+            # Manually delete data
+            del rgb, depth, mask, loc_x, loc_y, label
+            del batch
+            del output
+            del _, predicted, batch_correct
+
+            # Clear cache
+            if device != torch.device("cpu"):
+                logging.debug("        clear GPU cache")
+                torch.cuda.empty_cache()
             
     # Compute test accuracy
     test_accuracy = correct / total

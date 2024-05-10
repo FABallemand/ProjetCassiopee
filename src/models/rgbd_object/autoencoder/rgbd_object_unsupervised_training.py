@@ -36,9 +36,9 @@ def rgbd_object_ae_unsupervised_training():
     DEVICE = setup_pytorch()
 
     # Dataset parameters
-    INPUT_SIZE = (256,256)
-    MODALITIES = ["rgb"]
-    TRANSFORMATION = None
+    INPUT_SIZE = (256,256) # Width and hheight of the imputs
+    MODALITIES = ["rgb"]   # Modalities
+    TRANSFORMATION = None  # Transformation of the inputs
     CROP_TRANSFORMATION = ObjectCrop(output_size=INPUT_SIZE,
                                      padding=(20,20),
                                      offset_range=(-10,10))
@@ -48,13 +48,13 @@ def rgbd_object_ae_unsupervised_training():
     # NB_MAX_TRAIN_SAMPLES = 20000
     # NB_MAX_VALIDATION_SAMPLES = 100
     # NB_MAX_TEST_SAMPLES = None
-    SPLIT = None
+    SPLIT = 1 # Split of the dataset (None, 0, 1)
 
     # Training parameters
-    WEIGHTS_FREEZING = True # Weight freezing
-    LAST_CHECKPOINT = None # Last checkpoint to load
+    WEIGHTS_FREEZING = False # Weight freezing
+    LAST_CHECKPOINT = None   # Last checkpoint to load
 
-    BATCH_SIZE = 5   # Batch size
+    BATCH_SIZE = 50   # Batch size
     SHUFFLE = True    # Shuffle
     DROP_LAST = False # Drop last batch
     NUM_WORKERS = 0   # Number of prpocesses
