@@ -61,7 +61,7 @@ class MocaplabDatasetCNN(Dataset):
     
     def _load_data(self):
         # Retrieve labels
-        labels = pd.read_csv(os.path.join(os.path.dirname(self.path),
+        labels = pd.read_csv(os.path.join(self.path,
                                           "Annotation_gloses.csv"), sep="\t")
         labels.dropna(inplace=True)
         self.labels = {n: c for n, c in zip(labels["Nom.csv"], labels["Mono/Bi"])}

@@ -51,7 +51,7 @@ def rgbd_object_cnn_supervised_training():
     # NB_MAX_TRAIN_SAMPLES = 50000
     # NB_MAX_VALIDATION_SAMPLES = 20000
     # NB_MAX_TEST_SAMPLES = None
-    SPLIT = 0 # Split of the dataset (None, 0, 1)
+    SPLIT = None # Split of the dataset (None, 0, 1)
 
     # Training parameters
     WEIGHTS_FREEZING = False # Weight freezing

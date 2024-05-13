@@ -15,8 +15,13 @@ from src.dataset import MocaplabDatasetFC
 from src.models.mocaplab import MocaplabFC
 from fc.train import *
 
+# from ...setup import setup_python, setup_pytorch
+# from ...dataset.mocaplab_fc import MocaplabDatasetFC
+# from ...models.mocaplab.fc import MocaplabFC
+# from ...models.mocaplab.fc.train import train
 
-def plot_animation(i, data, label, prediction, nom):
+
+def plot_animation(i, data, label, prediction, nom, heatmap):
 
     print(f"i={i}")
     print(f"data={data}")
@@ -25,6 +30,7 @@ def plot_animation(i, data, label, prediction, nom):
     print(f"nom={nom}")
 
     # List of points that should appear in different color each frame (list of 100 lists of len 10) 
+    '''
     points_color_indices = [
         [231, 220, 230,  24, 232, 221,  23, 219, 222,  25],
         [ 24,  23, 220, 231, 221,  25, 222, 230,  22, 223],
@@ -135,6 +141,10 @@ def plot_animation(i, data, label, prediction, nom):
         for j in range(10):
             joints_color_frame.append(points_color_indices[i][j] // 3)
         joints_color.append(joints_color_frame)
+    '''
+    
+    #We say that the list of joints to put in color is the heatmap parameter
+    joints_color = heatmap
 
     model = "CNN"
 
@@ -179,8 +189,6 @@ def plot_animation(i, data, label, prediction, nom):
         (45, 61), (61, 62), (62, 63), (63, 64), (64, 65),                                    # Left hand, index
         (45, 66), (66, 67), (67, 68), (68, 69)                                               # Left hand, thumb                
     ]
-
-    # Plus qu'à faire les mains 
 
     num_lines = len(line_points_indices)
     lines = [ax.plot([], [], [], "-", color="red")[0] for _ in range(num_lines)]
@@ -275,21 +283,50 @@ if __name__ == "__main__":
         data = data.squeeze(0)
         
         nom = f"{i}_{label}_{predicted}"
-        
-        n0 = 0
-        n1 = 0
-        ndiff = 0
 
-        if ndiff < 2 and predicted != label :
-            ndiff += 1
-            plot_animation(i, data, label, predicted, nom)
+        ###TO GET THE HEATMAP LIST OF 10 MOST IMPORTANT JOINTS###
+    
+        img = next(iter(data_loader))[i]
 
-        elif n0 < 2 and label == 0 :
-            n0 += 1
-            plot_animation(i, data, label, predicted, nom)
+        # get the most likely prediction of the model
+        pred = cnn(img)
 
-        elif n1 < 2 and label == 1 :
-            n1 += 1
-            plot_animation(i, data, label, predicted, nom)
+        # get the gradient of the output with respect to the parameters of the model
+        pred[:,0].backward()
+
+        # pull the gradients out of the model
+        gradients = cnn.get_activations_gradient()
+
+        # pool the gradients across the channels
+        pooled_gradients = torch.mean(gradients, dim=[0, 2, 3])
+
+
+        # get the activations of the last convolutional layer
+        activations = cnn.get_activations(img).detach()
+
+
+        # weight the channels by corresponding gradients
+        for i in range(256):
+            activations[:, i, :, :] *= pooled_gradients[i]
+
+        # average the channels of the activations
+        heatmap = torch.mean(activations, dim=1).squeeze()
+
+        #For each time frame, get the coordinates of the ten maximum activation values to find the most significant joints
+        #First, reshape the heatmap (64x64) to original size (100x237)
+        heatmap_resized = heatmap.unsqueeze(0).unsqueeze(0)
+        heatmap_resized = F.interpolate(heatmap_resized,size=(100,237), mode='bilinear')
+        #heatmap_resized = torch.squeeze(heatmap_resized)
+        ten_max_joints_all_frames = []
+
+        for i in range(1, 101):
+            max_for_one_joint = []
+            for j in range(0, 79): #237/3
+                max = torch.max(heatmap_resized[i][j*3:j*3+2])
+                max_for_one_joint.append(max)
+            _, max_activations_indices = torch.topk(max_for_one_joint, k=10)
+            ten_max_joints_all_frames.append(max_activations_indices)
+
+        plot_animation(i, data, label, predicted, nom, ten_max_joints_all_frames)
 
     print("#### DONE ####")

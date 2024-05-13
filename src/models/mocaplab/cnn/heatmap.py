@@ -25,7 +25,7 @@ cnn = TestCNN(softmax=False)
 cnn.eval()
 
 # get the image form the dataloader
-dataset = MocaplabDatasetCNN(path="self_supervised_learning/dev/ProjetCassiopee/data/mocaplab/Cassiopée_Allbones",
+dataset = MocaplabDatasetCNN(path="/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee/data/mocaplab/Cassiopée_Allbones",
                               padding = True, 
                               train_test_ratio = 8,
                               validation_percentage = 0.01)
@@ -34,9 +34,8 @@ data_loader = DataLoader(dataset,
                             batch_size=1,
                             shuffle=False)
 
-for i in range(len(data_loader)) :
-    img = next(iter(data_loader))[i]
-
+for k, img in enumerate(data_loader):
+    img = img[0]
     # get the most likely prediction of the model
     pred = cnn(img)
 
@@ -65,17 +64,17 @@ for i in range(len(data_loader)) :
     #First, reshape the heatmap (64x64) to original size (100x237)
     heatmap_resized = heatmap.unsqueeze(0).unsqueeze(0)
     heatmap_resized = F.interpolate(heatmap_resized,size=(100,237), mode='bilinear')
-    #heatmap_resized = torch.squeeze(heatmap_resized)
+    heatmap_resized = torch.squeeze(heatmap_resized)
     ten_max_joints_all_frames = []
 
-    for i in range(1, 101):
+    for i in range(0, 100):
         max_for_one_joint = []
         for j in range(0, 79): #237/3
             max = torch.max(heatmap_resized[i][j*3:j*3+2])
             max_for_one_joint.append(max)
-        _, max_activations_indices = torch.topk(max_for_one_joint, k=10)
+        _, max_activations_indices = torch.topk(torch.as_tensor(max_for_one_joint), k=10)
         ten_max_joints_all_frames.append(max_activations_indices)
-    print(ten_max_joints_all_frames)
+    # print(ten_max_joints_all_frames)
 
     # relu on top of the heatmap
     # expression (2) in https://arxiv.org/pdf/1610.02391.pdf
@@ -84,7 +83,7 @@ for i in range(len(data_loader)) :
     # normalize the heatmap
     heatmap /= torch.max(heatmap)
 
-    nom = str(i)
+    nom = str(k)
     fig = plt.figure()
     # draw the heatmap
     plt.matshow(heatmap.squeeze())

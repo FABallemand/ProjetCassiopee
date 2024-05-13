@@ -29,7 +29,7 @@ if __name__ == '__main__':
     ## RGBD Object ############################################################
     ###########################################################################
     # CNN
-    # rgbd_object_cnn_supervised_training()
+    #rgbd_object_cnn_supervised_training()
 
     # AE
     # rgbd_object_ae_unsupervised_training()
