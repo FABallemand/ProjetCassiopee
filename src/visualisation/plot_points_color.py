@@ -39,11 +39,6 @@ def create_images(i, data, label, prediction, nom, heatmap):
 
     #We say that the list of joints to put in color is the heatmap parameter
     joints_color = heatmap
-    print("joint color")
-    print(type(joints_color))
-    print(len(joints_color))
-    print(len(joints_color[0]))
-    print(joints_color)
 
     model = "CNN"
 
@@ -95,10 +90,6 @@ def create_images(i, data, label, prediction, nom, heatmap):
         lines = [ax.plot([], [], [], "-", color="red")[0] for _ in range(num_lines)]
 
 
-
-
-
-
         frame_coordinates = (x_data[frame], z_data[frame], y_data[frame])
 
         # Update the scatter plot with new point positions
@@ -114,11 +105,15 @@ def create_images(i, data, label, prediction, nom, heatmap):
                              [y_data[frame][start], y_data[frame][end]])
 
         # Update the colors of the points based on the joints_color list
-        colors = ["red" if idx in joints_color[frame] else "blue" for idx in range(len(x_data[frame]))]
+        colors = ["limegreen" if idx in joints_color[frame] else "blue" for idx in range(len(x_data[frame]))]
+        print(len(colors))
+        print(colors)
         sizes = [200 if idx in joints_color[frame] else 50 for idx in range(len(x_data[frame]))] # Set larger size for points with red color
+        print(len(sizes))
+        print(sizes)
         scatter.set_edgecolors(colors)
         scatter.set_facecolors(colors)
-        scatter.set_sizes(sizes)     
+        # scatter.set_sizes(sizes) # Broken
         
         fig.savefig(f"/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee/visualisation_results/mocaplab/animation/{nom}/{frame}.png")
         plt.close()
@@ -299,48 +294,30 @@ def create_animation(i, data, label, prediction, nom, heatmap):
     def update(frame):    
 
         # Get the coordinates for the current frame
-        print("1")
         frame_coordinates = (x_data[frame], z_data[frame], y_data[frame])
-
-        print("2")
 
         # Update the scatter plot with new point positions
         scatter._offsets3d = frame_coordinates
 
-        print("3")
-
         # Set the title to display the current data, label and frame
         ax.set_title(f"Data {i}, Label : {label}, Prediction : {prediction} with model {model} \nFrame: {frame}")
-
-        print("4")
 
         # Adding lines between the joints
         for line, (start, end) in zip(lines, line_points_indices):
             line.set_data_3d([x_data[frame][start], x_data[frame][end]],
                              [z_data[frame][start], z_data[frame][end]],
                              [y_data[frame][start], y_data[frame][end]])
-            
-        print("5")
 
         # Update the colors of the points based on the joints_color list
-        colors = ["red" if idx in joints_color[frame] else "blue" for idx in range(len(x_data[frame]))]
+        colors = ["limegreen" if idx in joints_color[frame] else "blue" for idx in range(len(x_data[frame]))]
         sizes = [200 if idx in joints_color[frame] else 50 for idx in range(len(x_data[frame]))] # Set larger size for points with red color
         scatter.set_edgecolors(colors)
         scatter.set_facecolors(colors)
-        scatter.set_sizes(sizes)
-
-        print("6")
-
-        print(f"scatter={scatter}")
-        print(f"lines={lines}")
+        # scatter.set_sizes(sizes)
 
         return scatter, *lines
 
     # Create the animation
-    print("HERE")
-    print(f"data={type(data)}")
-    print(f"data={len(data)}")
-    print(f"data={data}")
     animation = FuncAnimation(fig, update, frames=len(data), blit=True)
     
     # Save the animation as a GIF
@@ -461,6 +438,7 @@ def create_all_animations(results_dir="visualisation_results/mocaplab/supervised
         nom = f"{i}_{label}_{predicted}"
         
         create_images(i, data, label, predicted, nom, ten_max_joints_all_frames)
+        create_animation(i, data, label, predicted, nom, ten_max_joints_all_frames)
 
     print("#### DONE ####")
 

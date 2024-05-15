@@ -22,7 +22,7 @@ def rgbd_object_ae_unsupervised_contrastive_training():
     os.mkdir(results_dir)
 
     # Configure logging
-    FORMAT = '%(asctime)s %(message)s'
+    FORMAT = "%(asctime)s %(message)s"
     logging.basicConfig(filename=os.path.join(results_dir, "training.log"),
                         level=logging.DEBUG, format=FORMAT)
 

@@ -6,6 +6,8 @@ from torch.utils.data import Dataset
 import numpy as np
 from PIL import Image as im
 
+from torch.utils.data import DataLoader
+
 class MocaplabDatasetCNN(Dataset):
     """
     PyTorch dataset for the Mocaplab dataset.

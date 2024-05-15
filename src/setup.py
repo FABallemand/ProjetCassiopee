@@ -1,6 +1,10 @@
 import os
 import sys
+from subprocess import check_output
 import logging
+
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 import torch
 
@@ -24,9 +28,20 @@ def setup_pytorch(gpu=True) -> torch.device:
             if torch.backends.cudnn.enabled:
                 torch.backends.cudnn.benchmark = True
 
-        DEVICE = torch.device("cuda:0")
+        output = check_output(["nvidia-smi", "--format=csv", "--query-gpu=index,name,driver_version,memory.total,memory.used,memory.free"])
+        logging.info(f"{output.decode('utf-8')}")
+        logging.info(f"torch.cuda.device_count() = {torch.cuda.device_count()}")
         logging.info(f"torch.version.cuda = {torch.version.cuda}")
+        logging.info(f"torch.cuda.current_device() = {torch.cuda.current_device()}")
+        logging.info(f"torch.cuda.get_device_name(torch.cuda.current_device()) = {torch.cuda.get_device_name(torch.cuda.current_device())}")
+        DEVICE = torch.device("cuda:0")
         torch.multiprocessing.set_start_method("spawn") # MAYBE NOT REQUIRED
+        torch.cuda.empty_cache()
+
+        # Force CUDA initialisation
+        torch.cuda.empty_cache()
+        s = 32
+        torch.nn.functional.conv2d(torch.zeros(s, s, s, s, device=DEVICE), torch.zeros(s, s, s, s, device=DEVICE))
         torch.cuda.empty_cache()
     else:
         DEVICE = torch.device("cpu")

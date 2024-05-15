@@ -55,6 +55,8 @@ pip3 install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --
 - https://pytorch.org/get-started/previous-versions/
 
 ## 💾 Useful Commands
+
+### Data
 ```bash
 tar -xvf file.tar
 tar -xzvf file.tar.gz
@@ -66,20 +68,40 @@ gdown --folder link/to/folder -O /path/to/dir
 
 # Copy folder/file from local to server
 scp -r /path/to/local/dir user@remotehost:/path/to/remote/dir
+```
 
+### Python
+```bash
+# Run program with nohup (see also tmux)
 nohup python3 -u main.py &
+```
 
-CUDA_LAUNCH_BLOCKING=1 nohup python3 -u main.py &
-
+### Debugging
+```bash
+# Kill nohup process
 # https://stackoverflow.com/questions/17385794/how-to-get-the-process-id-to-kill-a-nohup-process
 
+# Run program with CUDA_LAUNCH_BLOCKING=1
+CUDA_LAUNCH_BLOCKING=1 nohup python3 -u main.py &
+
+# Reboot server
 sudo reboot now
 
+# Clear RAM cache
 sudo sync; echo 1 > /proc/sys/vm/drop_caches
 
+# Kill all process using pattern
 pkill -f <pattern>
 
+# "Restart" GPU on Ubuntu
+# https://discuss.pytorch.org/t/cuda-fails-to-reinitialize-after-system-suspend/158108/3
+sudo rmmod nvidia_uvm
+sudo modprobe nvidia_uvm
 
+# Debugging tool
+dmesg | grep GPU
+
+# Read end of file
 # https://kb.iu.edu/d/acrj
 tail [ +-[number][lbcr] ] [file]
 ```

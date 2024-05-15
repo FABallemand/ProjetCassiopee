@@ -59,7 +59,9 @@ for k, img in enumerate(data_loader):
 
     # average the channels of the activations
     heatmap = torch.mean(activations, dim=1).squeeze()
-
+    print(heatmap)
+    heatmap = torch.abs(torch.mean(activations, dim=1).squeeze())
+    '''
     #For each time frame, get the coordinates of the ten maximum activation values to find the most significant joints
     #First, reshape the heatmap (64x64) to original size (100x237)
     heatmap_resized = heatmap.unsqueeze(0).unsqueeze(0)
@@ -75,7 +77,8 @@ for k, img in enumerate(data_loader):
         _, max_activations_indices = torch.topk(torch.as_tensor(max_for_one_joint), k=10)
         ten_max_joints_all_frames.append(max_activations_indices)
     # print(ten_max_joints_all_frames)
-
+    '''
+    
     # relu on top of the heatmap
     # expression (2) in https://arxiv.org/pdf/1610.02391.pdf
     heatmap = np.maximum(heatmap, 0)
