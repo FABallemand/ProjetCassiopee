@@ -1,5 +1,6 @@
 import os
 import psutil
+import math
 import logging
 import torch
 
@@ -27,8 +28,12 @@ def train_one_epoch(
     # Initialise loss
     train_loss = 0.0
 
+    # Log
+    nb_batch = len(data_loader)
+    nb_digits = int(math.log10(nb_batch)) + 1
+
     # Pass over all batches
-    for i, batch in enumerate(data_loader):
+    for i, batch in enumerate(data_loader, start=1):
         logging.debug(f"        batch {i}")
 
         # Load and prepare batch
@@ -75,16 +80,18 @@ def train_one_epoch(
         train_loss += loss.detach().item()
 
         # Log
+        with open(os.path.join(results_dir, f"epoch_{epoch}.csv"), "a") as f:
+            f.write(f"{batch_correct / label.size(0):.4f},{loss:.4f}\n")
         if i % 10 == 0:
             # Batch loss
-            logging.info(f"    Batch {i:8}/{len(data_loader)}: accuracy={batch_correct / label.size(0):.4f} | loss={loss:.4f}")
+            logging.info(f"    Batch {i:{nb_digits}}/{nb_batch}: accuracy={batch_correct / label.size(0):.4f} | loss={loss:.4f}")
 
             # Print memory usage
-            logging.debug(f"        RAM: {psutil.virtual_memory()[2]} % | {psutil.virtual_memory()[3] / 1000000000} GB")
-            logging.debug(f"        VRAM: {torch.cuda.memory_allocated() / 1000000000} / {torch.cuda.max_memory_allocated() / 1000000000}")
+            logging.debug(f"    RAM: {psutil.virtual_memory()[2]} % | {psutil.virtual_memory()[3] / 1000000000:.2f} / {psutil.virtual_memory()[1] / 1000000000:.2f} GB")
+            logging.debug(f"    VRAM: {torch.cuda.memory_allocated() / 1000000000:.2f} / {torch.cuda.max_memory_allocated() / 1000000000:.2f}")
 
         # Save model
-        if i % 100 == 0 and i != 0:
+        if i % 100 == 0:
             torch.save(model.state_dict(), os.path.join(results_dir, f"weights_epoch_{epoch}_batch_{i}"))
 
         # Manually delete data
@@ -206,8 +213,9 @@ def train(
         # Create optimizer
         optimizer = create_optimizer(optimizer_type, model, learning_rate, momentum=0.6)
 
+        nb_digits = int(math.log10(epochs)) + 1
         for epoch in range(1, epochs + 1):
-            logging.info(f"#### EPOCH {epoch:4}/{epochs} ####")
+            logging.info(f"#### EPOCH {epoch:{nb_digits}}/{epochs} ####")
             
             # Train for one epoch
             if debug:
@@ -215,10 +223,6 @@ def train(
                     train_accuracy, train_loss = train_one_epoch(model, train_data_loader, loss_function, optimizer, epoch, device, results_dir, debug)
                     train_accuracies.append(train_accuracy)
                     train_losses.append(train_loss)
-
-                    # Print memory usage
-                    # logging.debug(f"RAM: {psutil.virtual_memory()[2]} % | {psutil.virtual_memory()[3] / 1000000000} GB")
-                    # logging.debug(f"VRAM: {torch.cuda.memory_allocated() / 1000000000} / {torch.cuda.max_memory_allocated() / 1000000000}")
 
                     # Print gradients for each parameter
                     # for name, param in model.named_parameters():
@@ -247,6 +251,9 @@ def train(
                 logging.debug("clear GPU cache")
                 torch.cuda.empty_cache()
 
+            # Log
+            with open(os.path.join(results_dir, f"epochs.csv"), "a") as f:
+                f.write(f"{train_accuracy:.8f},{train_loss:.8f},{validation_accuracy:.8f},{validation_loss:.8f}\n")
             logging.info(f"Train:      accuracy={train_accuracy:.8f}      | loss={train_loss:.8f}")
             logging.info(f"Validation: accuracy={validation_accuracy:.8f} | loss={validation_loss:.8f}")
 

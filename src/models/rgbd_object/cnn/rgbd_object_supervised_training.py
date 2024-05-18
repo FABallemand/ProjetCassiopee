@@ -36,7 +36,7 @@ def rgbd_object_cnn_supervised_training():
     setup_python()
 
     # Set-up PyTorch
-    DEVICE = setup_pytorch()
+    DEVICE = setup_pytorch(gpu=False) # WARNING
 
     # Dataset parameters
     INPUT_SIZE = (256,256) # Width and hheight of the imputs
@@ -51,7 +51,7 @@ def rgbd_object_cnn_supervised_training():
     # NB_MAX_TRAIN_SAMPLES = 50000
     # NB_MAX_VALIDATION_SAMPLES = 20000
     # NB_MAX_TEST_SAMPLES = None
-    SPLIT = None # Split of the dataset (None, 0, 1)
+    SPLIT = 0 # Split of the dataset (None, 0, 1)
 
     # Training parameters
     WEIGHTS_FREEZING = False # Weight freezing
@@ -151,7 +151,10 @@ def rgbd_object_cnn_supervised_training():
     if WEIGHTS_FREEZING:
         for param in model.parameters():
             param.requires_grad = False
-    model.fc = torch.nn.Linear(512, len(train_dataset.class_dict), bias=True)
+    model.fc = torch.nn.Sequential(torch.nn.Linear(in_features=512, out_features=256, bias=True),
+                                   torch.nn.ReLU(inplace=True),
+                                   torch.nn.Linear(in_features=256, out_features=3, bias=True),
+                                   torch.nn.Softmax(dim=1))
 
     # Load last checkpoint if specified
     if LAST_CHECKPOINT is not None and os.path.isfile(LAST_CHECKPOINT):

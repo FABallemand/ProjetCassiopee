@@ -361,7 +361,7 @@ def create_all_animations(results_dir="visualisation_results/mocaplab/supervised
     
     print("#### Model ####")
     model = MocaplabFC(dataset_fc.max_length*237).to(DEVICE)
-    model.load_state_dict(torch.load(("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee/src/models/mocaplab/fc/saved_models/model_20240325_141951.ckpt"),
+    model.load_state_dict(torch.load(("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee/src/models/mocaplab/fc/saved_models/old/model_20240325_141951.ckpt"),
                                      map_location=torch.device("cpu")))
     model = model.to(DEVICE)
     model = model.double()
@@ -413,6 +413,21 @@ def create_all_animations(results_dir="visualisation_results/mocaplab/supervised
                 max_for_one_joint.append(max)
             _, max_activations_indices = torch.topk(torch.as_tensor(max_for_one_joint), k=10)
             ten_max_joints_all_frames.append(max_activations_indices)
+
+        ### CREATING THE HEATMAPS PLOTS ###
+        # relu on top of the heatmap
+        # expression (2) in https://arxiv.org/pdf/1610.02391.pdf
+        heatmap = np.maximum(heatmap, 0)
+
+        # normalize the heatmap
+        heatmap /= torch.max(heatmap)
+
+        nom = str(k)
+        fig = plt.figure()
+        # draw the heatmap
+        plt.matshow(heatmap.squeeze())
+        plt.savefig(f"/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee/src/visualisation/heatmap/heatmap_cnn2D_{nom}.png")
+        plt.close()
 
     print("#### Plot ####")
     for i, batch in enumerate(data_loader_fc):

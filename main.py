@@ -14,7 +14,7 @@ from src.models.rgbd_object.combined_model import rgbd_object_combined_supervise
 
 # Run with: nohup python3 -u main.py &
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Change working directory
     abspath = os.path.abspath(__file__)
     dname = os.path.dirname(abspath)
