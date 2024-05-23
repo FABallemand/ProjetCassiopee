@@ -300,7 +300,7 @@ def create_animation(i, data, label, prediction, nom, heatmap):
         scatter._offsets3d = frame_coordinates
 
         # Set the title to display the current data, label and frame
-        ax.set_title(f"Data {i}, Label : {label}, Prediction : {prediction} with model {model} \nFrame: {frame}")
+        ax.set_title(f"Data {nom[3:-6]}, Number {i}, Label : {label}, Prediction : {prediction} with model {model} \nFrame: {frame}")
 
         # Adding lines between the joints
         for line, (start, end) in zip(lines, line_points_indices):
@@ -323,7 +323,7 @@ def create_animation(i, data, label, prediction, nom, heatmap):
     # Save the animation as a GIF
     animation.save(f"/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee/src/visualisation/mocaplab_points_color/{nom}.gif",
                    writer='pillow')
-    plt.close()
+    plt.close(fig)
 
 
 def create_all_animations(results_dir="visualisation_results/mocaplab/supervised"):
@@ -370,12 +370,22 @@ def create_all_animations(results_dir="visualisation_results/mocaplab/supervised
     #intialize the CNN model
     cnn = TestCNN(softmax=False)
 
+    # Load the trained weights cnn old model
+    cnn.load_state_dict(torch.load(("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee/src/models/mocaplab/cnn/saved_models/old/model_20240325_154652.ckpt"),
+    #                                 map_location=torch.device("cpu")))
+
+    # Load the trained weights cnn new model
+    #cnn.load_state_dict(torch.load(("/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee/src/models/mocaplab/cnn/saved_models/CNN_20240514_211739.ckpt"),
+                                    map_location=torch.device("cpu")))
+
     # set the evaluation mode
     cnn.eval()
 
+    heatmap_data = []   # a table that contains 112 lists of 100 lists of size 10 (10 max joints for each frame for each data)
+
     for k, img in enumerate(data_loader_cnn):
         ###TO GET THE HEATMAP LIST OF 10 MOST IMPORTANT JOINTS###
-        img = img[0]
+        img, label, name = img
         print('img', k, img.shape)
         # get the most likely prediction of the model
         pred = cnn(img)
@@ -413,6 +423,8 @@ def create_all_animations(results_dir="visualisation_results/mocaplab/supervised
                 max_for_one_joint.append(max)
             _, max_activations_indices = torch.topk(torch.as_tensor(max_for_one_joint), k=10)
             ten_max_joints_all_frames.append(max_activations_indices)
+        
+        heatmap_data.append(ten_max_joints_all_frames)
 
         ### CREATING THE HEATMAPS PLOTS ###
         # relu on top of the heatmap
@@ -422,18 +434,18 @@ def create_all_animations(results_dir="visualisation_results/mocaplab/supervised
         # normalize the heatmap
         heatmap /= torch.max(heatmap)
 
-        nom = str(k)
-        fig = plt.figure()
+        nom = f'{k}_{name[0]}'
+        fig2 = plt.figure()
         # draw the heatmap
         plt.matshow(heatmap.squeeze())
-        plt.savefig(f"/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee/src/visualisation/heatmap/heatmap_cnn2D_{nom}.png")
-        plt.close()
+        plt.savefig(f"/home/self_supervised_learning_gr/self_supervised_learning/dev/ProjetCassiopee/src/visualisation/heatmap/oldmodel_heatmap_cnn2D_{nom}.png")
+        plt.close(fig2)
 
     print("#### Plot ####")
     for i, batch in enumerate(data_loader_fc):
         
         print(f"## Batch {i:4} / {len(data_loader_fc)} ##")
-        data, label = batch
+        data, label, name = batch
         data = data.to(DEVICE)
         label = label.to(DEVICE)
     
@@ -450,10 +462,10 @@ def create_all_animations(results_dir="visualisation_results/mocaplab/supervised
         
         data = data.squeeze(0)
         
-        nom = f"{i}_{label}_{predicted}"
+        nom = f"oldmdel_{i}_{name[0]}_{label}_{predicted}"
         
-        create_images(i, data, label, predicted, nom, ten_max_joints_all_frames)
-        create_animation(i, data, label, predicted, nom, ten_max_joints_all_frames)
+        create_images(i, data, label, predicted, nom, heatmap_data[i])
+        create_animation(i, data, label, predicted, nom, heatmap_data[i])
 
     print("#### DONE ####")
 

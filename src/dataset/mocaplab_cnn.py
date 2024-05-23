@@ -103,4 +103,4 @@ class MocaplabDatasetCNN(Dataset):
         data = np.expand_dims(data, axis=0)
         
     
-        return data, label
+        return data, label, self.x[idx]

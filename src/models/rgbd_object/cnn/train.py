@@ -53,8 +53,9 @@ def train_one_epoch(
         logging.debug("        inference")
         output = model(rgb)
 
-        if output.isnan().any():
-            logging.debug("        output contains NaN")
+        # if output.isnan().any():
+        #     logging.debug("        output contains NaN")
+        #     print(output)
 
         # Update accuracy variables
         _, predicted = torch.max(output.data, 1)
@@ -67,6 +68,7 @@ def train_one_epoch(
 
         if loss.isnan().any():
             logging.debug("        loss contains NaN")
+            continue # Skip to next batch
 
         # Compute gradient loss
         logging.debug("        back prop.")

@@ -95,4 +95,4 @@ class MocaplabDatasetFC(Dataset):
                 data.append([0.0 for _ in range(237)])
             data = np.stack(data)
         
-        return data, label
+        return data, label, self.x[idx]

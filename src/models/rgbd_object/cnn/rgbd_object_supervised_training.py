@@ -36,7 +36,7 @@ def rgbd_object_cnn_supervised_training():
     setup_python()
 
     # Set-up PyTorch
-    DEVICE = setup_pytorch(gpu=False) # WARNING
+    DEVICE = setup_pytorch(gpu=True) # WARNING
 
     # Dataset parameters
     INPUT_SIZE = (256,256) # Width and hheight of the imputs
@@ -67,11 +67,11 @@ def rgbd_object_cnn_supervised_training():
     OPTIMIZER_TYPE = "SGD"                      # Type of optimizer
 
     EPOCHS = [1000]          # Number of epochs
-    LEARNING_RATES = [0.001] # Learning rates
+    LEARNING_RATES = [0.0001] # Learning rates
     
     EARLY_STOPPING = False # Early stopping
     PATIENCE = 10          # Early stopping patience
-    MIN_DELTA = 0.0001     # Early stopping minimum delta
+    MIN_DELTA = 0.001      # Early stopping minimum delta
 
     DEBUG = False # Debug flag
     
@@ -151,10 +151,11 @@ def rgbd_object_cnn_supervised_training():
     if WEIGHTS_FREEZING:
         for param in model.parameters():
             param.requires_grad = False
-    model.fc = torch.nn.Sequential(torch.nn.Linear(in_features=512, out_features=256, bias=True),
-                                   torch.nn.ReLU(inplace=True),
-                                   torch.nn.Linear(in_features=256, out_features=3, bias=True),
-                                   torch.nn.Softmax(dim=1))
+    model.fc = torch.nn.Linear(512, len(train_dataset.class_dict), bias=True)
+    # model.fc = torch.nn.Sequential(torch.nn.Linear(in_features=512, out_features=256, bias=True),
+    #                                torch.nn.ReLU(inplace=True),
+    #                                torch.nn.Linear(in_features=256, out_features=len(train_dataset.class_dict), bias=True),
+    #                                torch.nn.Softmax(dim=1))
 
     # Load last checkpoint if specified
     if LAST_CHECKPOINT is not None and os.path.isfile(LAST_CHECKPOINT):

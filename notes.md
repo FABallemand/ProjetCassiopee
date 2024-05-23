@@ -137,7 +137,7 @@ tail [ +-[number][lbcr] ] [file]
 - Log confusion matrix during training
 
 ## Notes
-- RGB-D Object: Improve pre-dataset for more randomness
+- RGB-D Object: Normalize input? https://www.geeksforgeeks.org/how-to-normalize-images-in-pytorch/
 
 BATCH_SIZE = 10
 +-----------------------------------------------------------------------------+
