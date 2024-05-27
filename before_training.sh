@@ -3,7 +3,7 @@
 # Free resources
 sudo killall python
 sudo killall python3
-pkill -f .vscode
+sudo pkill -f .vscode
 # sudo sync; echo 1 > /proc/sys/vm/drop_caches
 
 # Restart GPU
