@@ -10,17 +10,17 @@ for method_name, method_class in all_methods.items():
     print("Associated monitors:", sbc.list_monitors(method=method_name))
     print("================")
 
-print(f"current brightness is : {sbc.get_brightness()}")
+brightness = sbc.get_brightness()
+print(f"current brightness is : {brightness}")
 
-sleep(1)
+for i in range(0, 101, 5):
+    sbc.set_brightness(i)
+    print(f"current brightness is : {sbc.get_brightness()}")
+    sleep(0.5)
 
-new_brightness = 100
-sbc.set_brightness(new_brightness)
+for i in range(100, -1, -5):
+    sbc.set_brightness(i)
+    print(f"current brightness is : {sbc.get_brightness()}")
+    sleep(0.5)
 
-sleep(1)
-
-print(f"current brightness is : {sbc.get_brightness()}")
-
-# while(True):
-#     print(f"current brightness is : {get_brightness()}")
-#     sleep(1)
+sbc.set_brightness(brightness[0])
