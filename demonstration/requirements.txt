@@ -1,0 +1,6 @@
+numpy
+cv2
+imutils
+scikit-learn
+tensorflow
+screen_brightness_control

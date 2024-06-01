@@ -9,6 +9,8 @@ TEST/*
 *.png
 *.gif
 *.ckpt
+*.h5
+*.keras
 train_results/*
 !train_results/**/*.ipynb
 

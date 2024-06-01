@@ -1,0 +1,195 @@
+import os
+from subprocess import call
+import numpy as np
+import cv2
+import imutils
+from keras.models import load_model
+
+# global variables
+bg = None
+label_to_class = {0: "blank",
+                  1: "fist",
+                  2: "five",
+                  3: "ok",
+                  4: "thumbsdown",
+                  5: "thumbsup"}
+
+
+def _load_weights():
+    try:
+        model = load_model("hand_gesture_recog_model.h5")
+        print(model.summary())
+        # print(model.get_weights())
+        # print(model.optimizer)
+        return model
+    except Exception as e:
+        return None
+
+
+def run_avg(image, accum_weight):
+    global bg
+
+    # initialize the background
+    if bg is None:
+        bg = image.copy().astype("float")
+        return
+
+    # compute weighted average, accumulate it and update the background
+    cv2.accumulateWeighted(image, bg, accum_weight)
+
+
+def segment(image, threshold=25):
+    global bg
+
+    # find the absolute difference between background and current frame
+    diff = cv2.absdiff(bg.astype("uint8"), image)
+
+    # threshold the diff image so that we get the foreground
+    thresholded = cv2.threshold(diff, threshold, 255, cv2.THRESH_BINARY)[1]
+
+    # get the contours in the thresholded image
+    (cnts, _) = cv2.findContours(thresholded.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # return None, if no contours detected
+    if len(cnts) == 0:
+        return
+    else:
+        # based on contour area, get the maximum contour which is the hand
+        segmented = max(cnts, key=cv2.contourArea)
+        return (thresholded, segmented)
+
+
+def get_predicted_class(model, img):
+    global label_to_class
+
+    img = cv2.resize(img, (100, 100))
+    img = img.reshape(1, 100, 100, 1)
+
+    prediction = model.predict(img)
+
+    predicted_label = np.argmax(prediction)
+    
+    return label_to_class[predicted_label]
+
+
+def main():
+    # load model
+    model = _load_weights()
+
+    # initialize accumulated weight
+    accum_weight = 0.5
+
+    # get the reference to the webcam
+    camera = cv2.VideoCapture(0)
+
+    # get camera frame rate
+    fps = int(camera.get(cv2.CAP_PROP_FPS))
+
+    # region of interest (ROI) coordinates
+    top, right, bottom, left = 10, 350, 225, 590
+
+    # initialize num of frames
+    num_frames = 0
+
+    # volume percentage
+    volume = 50
+    call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
+
+    # calibration
+    # to get the background, keep looking till a threshold is reached
+    # so that our weighted average model gets calibrated
+    print("[STATUS] please wait! calibrating...")
+    for i in range(30):
+        # get the current frame
+        (grabbed, frame) = camera.read()
+
+        # resize the frame
+        frame = imutils.resize(frame, width=700)
+        
+        # flip the frame so that it is not the mirror view
+        frame = cv2.flip(frame, 1)
+
+        # get and process ROI
+        roi = frame[top:bottom, right:left]
+        roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        roi = cv2.GaussianBlur(roi, (7, 7), 0)
+
+        # perform calibration
+        run_avg(roi, accum_weight)
+    print("[STATUS] calibration successfull...")
+    
+    # keep looping, until interrupted
+    while(True):
+        # get the current frame
+        (grabbed, frame) = camera.read()
+
+        # resize the frame
+        frame = imutils.resize(frame, width=700)
+        
+        # flip the frame so that it is not the mirror view
+        frame = cv2.flip(frame, 1)
+
+        # clone the frame
+        clone = frame.copy()
+
+        # get and process ROI
+        roi = frame[top:bottom, right:left]
+        roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+        roi = cv2.GaussianBlur(roi, (7, 7), 0)
+        
+        # segment the hand region
+        hand = segment(roi)
+        if hand is not None:
+            # unpack the thresholded image and segmented region
+            (thresholded, segmented) = hand
+
+            # draw the segmented region and display the frame
+            cv2.drawContours(clone, [segmented + (right, top)], -1, (0, 0, 255))
+
+            # prediction
+            if num_frames % (fps / 6) == 0:
+                # make prediction
+                predicted_class = get_predicted_class(model, thresholded)
+
+                # display prediction
+                cv2.putText(clone, str(predicted_class), (70, 45), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
+                # adjust volume
+                if predicted_class == "thumbsup":
+                    volume += 2
+                    call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
+                elif predicted_class == "thumbsdown":
+                    volume -= 2
+                    call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
+                    
+            # show the thresholded image
+            cv2.imshow("Thesholded", thresholded)
+
+        # draw the segmented hand
+        cv2.rectangle(clone, (left, top), (right, bottom), (0, 255, 0), 2)
+
+        # increment the number of frames
+        num_frames += 1
+
+        # display the frame with segmented hand
+        cv2.imshow("Video Feed", clone)
+
+        # observe the keypress by the user
+        keypress = cv2.waitKey(1) & 0xFF
+
+        # if the user pressed "q", then stop looping
+        if keypress == ord("q"):
+            break
+
+    # free up memory
+    camera.release()
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    # Change working directory
+    abspath = os.path.abspath(__file__)
+    dname = os.path.dirname(abspath)
+    os.chdir(dname)
+
+    main()
