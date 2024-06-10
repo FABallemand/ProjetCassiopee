@@ -16,6 +16,14 @@ Current progress in the development of automatic recognition of human gestures h
 
 ## Method
 
+1. Working on professional high-quality motion capture data provided by Mocaplab
+
+2. Three deep learning models in supervised settings : Fully connected (FC), CNN and LSTM
+
+3. A self-supervised learning approach for CNN
+
+4. Explainability : GradCAM visualization
+
 ![](img/skeletons.png)
 
 ![](img/models_architecture.jpeg)
