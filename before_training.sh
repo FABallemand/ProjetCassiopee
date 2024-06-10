@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# This script can be executed before executing a model training.
+# It release a lot of computer resources that can be utilised for training.
+# This script was used on a remote node before training models
+# on the RGB-D Object dataset.
+
 # Free resources
 sudo killall python
 sudo killall python3
