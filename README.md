@@ -12,7 +12,16 @@ Current progress in the development of automatic recognition of human gestures h
 
 ![](img/cassiopee_1.png)
 
-Utilisation
-Method
-Results
-Citation
+## Utilisation
+
+## Method
+
+![](img/skeletons.png)
+
+![](img/models_architecture.jpeg)
+
+## Results
+
+![](img/results_tab.png)
+
+## Citation
