@@ -83,14 +83,14 @@ y = np.asarray(labels)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=True, random_state=4)
 
-X_train = X_train.reshape(X_train.shape[0], 100, 120, 1)
-X_test = X_test.reshape(X_test.shape[0], 100, 120, 1)
+X_train = X_train.reshape(X_train.shape[0], 100, 100, 1)
+X_test = X_test.reshape(X_test.shape[0], 100, 100, 1)
 
 model.fit(X_train,
           y_train,
-          batch_size=64,
-          epochs=128,
+          batch_size=16,
+          epochs=64,
           verbose=1,
           validation_data=(X_test, y_test))
 
-model.save("server_model.keras")
+model.save("model.keras")

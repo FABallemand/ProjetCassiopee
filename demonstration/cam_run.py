@@ -15,14 +15,11 @@ label_to_class = {0: "blank",
 
 
 def _load_weights():
-    try:
-        model = load_model("hand_gesture_recog_model.h5")
-        print(model.summary())
-        # print(model.get_weights())
-        # print(model.optimizer)
-        return model
-    except Exception as e:
-        return None
+    model = load_model("model.keras")
+    print(model.summary())
+    # print(model.get_weights())
+    # print(model.optimizer)
+    return model
 
 
 def run_avg(image, accum_weight):
@@ -90,28 +87,32 @@ def main():
     # initialize num of frames
     num_frames = 0
 
-    # calibration
-    # to get the background, keep looking till a threshold is reached
-    # so that our weighted average model gets calibrated
-    print("[STATUS] please wait! calibrating...")
-    for i in range(30):
-        # get the current frame
-        (grabbed, frame) = camera.read()
+    # define calibration function
+    def calibration():
+        # to get the background, keep looking till a threshold is reached
+        # so that our weighted average model gets calibrated
+        print("[STATUS] calibrating...")
+        for i in range(30):
+            # get the current frame
+            (grabbed, frame) = camera.read()
 
-        # resize the frame
-        frame = imutils.resize(frame, width=700)
-        
-        # flip the frame so that it is not the mirror view
-        frame = cv2.flip(frame, 1)
+            # resize the frame
+            frame = imutils.resize(frame, width=700)
+            
+            # flip the frame so that it is not the mirror view
+            frame = cv2.flip(frame, 1)
 
-        # get and process ROI
-        roi = frame[top:bottom, right:left]
-        roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-        roi = cv2.GaussianBlur(roi, (7, 7), 0)
+            # get and process ROI
+            roi = frame[top:bottom, right:left]
+            roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+            roi = cv2.GaussianBlur(roi, (7, 7), 0)
 
-        # perform calibration
-        run_avg(roi, accum_weight)
-    print("[STATUS] calibration successfull...")
+            # perform calibration
+            run_avg(roi, accum_weight)
+        print("[STATUS] calibration successfull")
+
+    # perform calibration once
+    calibration()
     
     # keep looping, until interrupted
     while(True):
@@ -155,11 +156,16 @@ def main():
         # draw the segmented hand
         cv2.rectangle(clone, (left, top), (right, bottom), (0, 255, 0), 2)
 
+        # display the frame with segmented hand
+        cv2.imshow("Projet Cassiopee 24", clone)
+
+        # perform calibration
+        if num_frames % (fps / 1000) == 0:
+            calibration()
+            num_frames = 0
+
         # increment the number of frames
         num_frames += 1
-
-        # display the frame with segmented hand
-        cv2.imshow("Video Feed", clone)
 
         # observe the keypress by the user
         keypress = cv2.waitKey(1) & 0xFF

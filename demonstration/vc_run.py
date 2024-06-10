@@ -7,23 +7,27 @@ from keras.models import load_model
 
 # global variables
 bg = None
-label_to_class = {0: "blank",
-                  1: "fist",
-                  2: "five",
-                  3: "ok",
-                  4: "thumbsdown",
-                  5: "thumbsup"}
+label_to_class = {0: "Blank",
+                  1: "Fist",
+                  2: "Five",
+                  3: "Ok",
+                  4: "Thumbsdown",
+                  5: "Thumbsup"}
+
+label_to_action = {0: "",
+                   1: "Sound down",
+                   2: "Stop",
+                   3: "Play",
+                   4: "",
+                   5: "Sound up"}
 
 
 def _load_weights():
-    try:
-        model = load_model("hand_gesture_recog_model.h5")
-        print(model.summary())
-        # print(model.get_weights())
-        # print(model.optimizer)
-        return model
-    except Exception as e:
-        return None
+    model = load_model("model.keras")
+    print(model.summary())
+    # print(model.get_weights())
+    # print(model.optimizer)
+    return model
 
 
 def run_avg(image, accum_weight):
@@ -69,7 +73,7 @@ def get_predicted_class(model, img):
 
     predicted_label = np.argmax(prediction)
     
-    return label_to_class[predicted_label]
+    return predicted_label
 
 
 def main():
@@ -95,28 +99,36 @@ def main():
     volume = 50
     call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
 
-    # calibration
-    # to get the background, keep looking till a threshold is reached
-    # so that our weighted average model gets calibrated
-    print("[STATUS] please wait! calibrating...")
-    for i in range(30):
-        # get the current frame
-        (grabbed, frame) = camera.read()
+    # Text to print
+    text = ""
+    text_position = (50, 500)
 
-        # resize the frame
-        frame = imutils.resize(frame, width=700)
-        
-        # flip the frame so that it is not the mirror view
-        frame = cv2.flip(frame, 1)
+    # define calibration function
+    def calibration():
+        # to get the background, keep looking till a threshold is reached
+        # so that our weighted average model gets calibrated
+        print("[STATUS] calibrating...")
+        for i in range(30):
+            # get the current frame
+            (grabbed, frame) = camera.read()
 
-        # get and process ROI
-        roi = frame[top:bottom, right:left]
-        roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-        roi = cv2.GaussianBlur(roi, (7, 7), 0)
+            # resize the frame
+            frame = imutils.resize(frame, width=700)
+            
+            # flip the frame so that it is not the mirror view
+            frame = cv2.flip(frame, 1)
 
-        # perform calibration
-        run_avg(roi, accum_weight)
-    print("[STATUS] calibration successfull...")
+            # get and process ROI
+            roi = frame[top:bottom, right:left]
+            roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+            roi = cv2.GaussianBlur(roi, (7, 7), 0)
+
+            # perform calibration
+            run_avg(roi, accum_weight)
+        print("[STATUS] calibration successfull")
+
+    # perform calibration once
+    calibration()
     
     # keep looping, until interrupted
     while(True):
@@ -149,30 +161,44 @@ def main():
             # prediction
             if num_frames % (fps / 6) == 0:
                 # make prediction
-                predicted_class = get_predicted_class(model, thresholded)
-
-                # display prediction
-                cv2.putText(clone, str(predicted_class), (70, 45), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+                prediectd_label = get_predicted_class(model, thresholded)
+                predicted_class = label_to_class[prediectd_label]
+                predicted_action = label_to_action[prediectd_label]
+                text = predicted_class + " - " + predicted_action
 
                 # adjust volume
-                if predicted_class == "thumbsup":
-                    volume += 2
-                    call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
-                elif predicted_class == "thumbsdown":
+                if predicted_class == "fist":
                     volume -= 2
                     call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
-                    
+                elif predicted_class == "five":
+                    volume = 0
+                    call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
+                elif predicted_class == "ok":
+                    volume = 50
+                    call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
+                elif predicted_class == "thumbsup":
+                    volume += 2
+                    call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
+
+            # display prediction
+            cv2.putText(clone, text, text_position, cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 255), 4)
+
             # show the thresholded image
             cv2.imshow("Thesholded", thresholded)
 
         # draw the segmented hand
         cv2.rectangle(clone, (left, top), (right, bottom), (0, 255, 0), 2)
 
+        # display the frame with segmented hand
+        cv2.imshow("Projet Cassiopee 24", clone)
+
+        # perform calibration
+        if num_frames % (fps / 1000) == 0:
+            calibration()
+            num_frames = 0
+
         # increment the number of frames
         num_frames += 1
-
-        # display the frame with segmented hand
-        cv2.imshow("Video Feed", clone)
 
         # observe the keypress by the user
         keypress = cv2.waitKey(1) & 0xFF
