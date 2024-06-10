@@ -55,4 +55,6 @@ Current progress in the development of automatic recognition of human gestures h
 
 ![](img/results_tab.png)
 
+## Example of interface for demonstration
+
 ## Citation
