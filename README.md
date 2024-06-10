@@ -8,7 +8,7 @@ Current progress in the development of automatic recognition of human gestures h
 ## 👥 Team
 - ALLEMAND Fabien
 - MAZZELLA Alessio
-- VILLETTE Jeanne
+- VILLETTE Jun
 
 ![](img/cassiopee_1.png)
 
