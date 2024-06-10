@@ -161,22 +161,22 @@ def main():
             # prediction
             if num_frames % (fps / 6) == 0:
                 # make prediction
-                prediectd_label = get_predicted_class(model, thresholded)
-                predicted_class = label_to_class[prediectd_label]
-                predicted_action = label_to_action[prediectd_label]
+                predicted_label = get_predicted_class(model, thresholded)
+                predicted_class = label_to_class[predicted_label]
+                predicted_action = label_to_action[predicted_label]
                 text = predicted_class + " - " + predicted_action
 
                 # adjust volume
-                if predicted_class == "fist":
+                if predicted_class == "Fist":
                     volume -= 2
                     call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
-                elif predicted_class == "five":
+                elif predicted_class == "Five":
                     volume = 0
                     call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
-                elif predicted_class == "ok":
+                elif predicted_class == "Ok":
                     volume = 50
                     call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
-                elif predicted_class == "thumbsup":
+                elif predicted_class == "Thumbsup":
                     volume += 2
                     call(["amixer", "-D", "pulse", "sset", "Master", str(volume)+"%"])
 
