@@ -7,6 +7,7 @@ from keras.models import load_model
 
 # global variables
 bg = None
+
 label_to_class = {0: "Blank",
                   1: "Fist",
                   2: "Five",
@@ -63,7 +64,7 @@ def segment(image, threshold=25):
         return (thresholded, segmented)
 
 
-def get_predicted_class(model, img):
+def get_predicted_label(model, img):
     global label_to_class
 
     img = cv2.resize(img, (100, 100))
@@ -161,7 +162,7 @@ def main():
             # prediction
             if num_frames % (fps / 6) == 0:
                 # make prediction
-                predicted_label = get_predicted_class(model, thresholded)
+                predicted_label = get_predicted_label(model, thresholded)
                 predicted_class = label_to_class[predicted_label]
                 predicted_action = label_to_action[predicted_label]
                 text = predicted_class + " - " + predicted_action

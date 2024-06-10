@@ -3,16 +3,16 @@ import numpy as np
 import cv2
 import imutils
 from keras.models import load_model
-import screen_brightness_control as sbc
 
 # global variables
 bg = None
-label_to_class = {0: "blank",
-                  1: "fist",
-                  2: "five",
-                  3: "ok",
-                  4: "thumbsdown",
-                  5: "thumbsup"}
+
+label_to_class = {0: "Blank",
+                  1: "Fist",
+                  2: "Five",
+                  3: "Ok",
+                  4: "Thumbsdown",
+                  5: "Thumbsup"}
 
 
 def _load_weights():
@@ -56,7 +56,7 @@ def segment(image, threshold=25):
         return (thresholded, segmented)
 
 
-def get_predicted_class(model, img):
+def get_predicted_label(model, img):
     global label_to_class
 
     img = cv2.resize(img, (100, 100))
@@ -66,7 +66,7 @@ def get_predicted_class(model, img):
 
     predicted_label = np.argmax(prediction)
     
-    return label_to_class[predicted_label]
+    return predicted_label
 
 
 def main():
@@ -88,9 +88,9 @@ def main():
     # initialize num of frames
     num_frames = 0
 
-    # volume percentage
-    brightness = 50
-    sbc.set_brightness(brightness)
+    # Text to print
+    text = ""
+    text_position = (50, 500)
 
     # define calibration function
     def calibration():
@@ -150,19 +150,13 @@ def main():
             # prediction
             if num_frames % (fps / 6) == 0:
                 # make prediction
-                predicted_class = get_predicted_class(model, thresholded)
+                predicted_label = get_predicted_label(model, thresholded)
+                predicted_class = label_to_class[predicted_label]
+                text = predicted_class
 
-                # display prediction
-                cv2.putText(clone, str(predicted_class), (70, 45), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-
-                # adjust brightness
-                if predicted_class == "thumbsup":
-                    brightness += 2
-                    sbc.set_brightness(brightness)
-                elif predicted_class == "thumbsdown":
-                    brightness -= 2
-                    sbc.set_brightness(brightness)
-                    
+            # display prediction
+            cv2.putText(clone, text, text_position, cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 255), 4)
+ 
             # show the thresholded image
             cv2.imshow("Thesholded", thresholded)
 
