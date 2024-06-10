@@ -1,6 +1,7 @@
 # Configuration
 artemis/*
 .vscode/*
+.DS_Store
 *.private
 
 # Tests
