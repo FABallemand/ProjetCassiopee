@@ -14,6 +14,17 @@ Current progress in the development of automatic recognition of human gestures h
 
 ## Utilisation
 
+1. Description
+- documentation contains the poster and the report of the project
+- demonstration contains the necessary to run an interactive hand gesture demonstration
+- data contains the datasets used (mocaplab data not available publicly)
+- src contains all the code
+
+2. Running
+- Train all three supervised models : src/models/mocaplab/full_train.py
+- Train self-supervised CNN : src/models/mocaplab/ssl_train.py
+- Visualize the classifications of the models : src/models/mocaplab/classification_visu.py
+
 ## Method
 
 1. Working on professional high-quality motion capture data provided by Mocaplab
