@@ -11,3 +11,8 @@ Current progress in the development of automatic recognition of human gestures h
 - VILLETTE Jeanne
 
 ![](img/cassiopee_1.png)
+
+Utilisation
+Method
+Results
+Citation
