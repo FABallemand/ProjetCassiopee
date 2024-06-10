@@ -32,6 +32,15 @@ Current progress in the development of automatic recognition of human gestures h
 
 ## Results
 
+1. Deep learning methods are very powerful for gesture recognition
+
+2. Self-supervised learning leverages small amount of labeled data for better results than supervised learning
+
+3. Limitations and perspectives
+- Binary classification is an ‘easy’ task on which simple models can excel 
+- Explaining the prediction for two hands signs needs further investigation  
+- Extend to multiple categories data and consider larger volumes of data
+
 ![](img/results_tab.png)
 
 ## Citation
