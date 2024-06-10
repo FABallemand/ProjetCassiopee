@@ -24,6 +24,7 @@ Current progress in the development of automatic recognition of human gestures h
 - Train all three supervised models : src/models/mocaplab/full_train.py
 - Train self-supervised CNN : src/models/mocaplab/ssl_train.py
 - Visualize the classifications of the models : src/models/mocaplab/classification_visu.py
+- Plot GradCAM visualization skeletons : src/visualisation/plot_points_color.py
 
 ## Method
 
