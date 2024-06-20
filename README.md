@@ -56,6 +56,19 @@ Current progress in the development of automatic recognition of human gestures h
 
 ## Cite
 
+[Research paper:](https://arxiv.org/abs/2406.12440)
+
+```
+@misc{allemand2024deep,
+      title={Deep self-supervised learning with visualisation for automatic gesture recognition}, 
+      author={Fabien Allemand and Alessio Mazzela and Jun Villette and Decky Aspandi and Titus Zaharia},
+      year={2024},
+      eprint={2406.12440},
+      archivePrefix={arXiv},
+      primaryClass={id='cs.CV' full_name='Computer Vision and Pattern Recognition' is_active=True alt_name=None in_archive='cs' is_general=False description='Covers image processing, computer vision, pattern recognition, and scene understanding. Roughly includes material in ACM Subject Classes I.2.10, I.4, and I.5.'}
+}
+```
+
 ## 👥 Team
 - ALLEMAND Fabien
 - MAZZELLA Alessio
