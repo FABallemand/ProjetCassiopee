@@ -1,5 +1,7 @@
 # 🌌 Projet Cassiopée
 
+[![arXiv](https://img.shields.io/badge/arXiv-1234.56789-b31b1b.svg)](https://arxiv.org/abs/2406.12440)
+
 ## 🖐 Self-supervised learning with deep neural networks for automatic gesture recognition
 Gesture is an important means of non-verbal communication that facilitates many human interactions in different contexts, including driving or communicating with disabled people. It is therefore essential to acquire the ability to automatically recognise this means of communication in order to improve human-computer interactions.
 
